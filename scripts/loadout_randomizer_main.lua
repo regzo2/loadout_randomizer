@@ -6,14 +6,12 @@ local ITEM_TYPES = UISettings.ITEM_TYPES
 local MasterItems = require("scripts/backend/master_items")
 local LoadoutRandomizerGenerator = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_generator")
 
+mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_tests")
+
 mod.on_setting_changed = function()
 	mod.sett_weapon_display_format 	= mod:get("sett_weapon_display_format_id")
 	mod.sett_display_weapon_chance 	= mod:get("sett_weapon_chance_id")
 	mod.sett_randomize_weapons 		= mod:get("sett_randomize_weapons_id")
-	mod.sett_randomize_blitz		= mod:get("sett_randomize_talent_blitz_id")
-	mod.sett_randomize_ability		= mod:get("sett_randomize_talent_ability_id")
-	mod.sett_randomize_keystone		= mod:get("sett_randomize_talent_keystone_id")
-	mod.sett_randomize_aura			= mod:get("set_randomize_talent_aura_id")
 end
 
 mod.on_setting_changed()

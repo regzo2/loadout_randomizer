@@ -200,14 +200,14 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 	local cb_on_item_roll = function()
 		randomize_button.content.hotspot.disabled = true
 
-		local data = LoadoutRandomizerGenerator.generate_random_loadout(
-			{
-				mod.sett_randomize_ability and "ability" or nil,
-				mod.sett_randomize_aura and "aura" or nil,
-				mod.sett_randomize_keystone and "keystone" or nil,
-				mod.sett_randomize_blitz and "tactical" or nil, --blitz
+		local talent_mask = {
+			mod:get("sett_randomize_talent_ability_id") and "ability" or nil,
+			mod:get("sett_randomize_talent_aura_id") and "aura" or nil,
+			mod:get("sett_randomize_talent_blitz_id") and "tactical" or nil, --blitz
+			mod:get("sett_randomize_talent_keystone_id") and "keystone" or nil,
 			}
-		)
+
+		local data = LoadoutRandomizerGenerator.generate_random_loadout(talent_mask)
 
 		--gbl_d = data
 
