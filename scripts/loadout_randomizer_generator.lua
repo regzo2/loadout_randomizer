@@ -247,9 +247,6 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(talents_mask, arch
 				end
 			end
 		end
-
-		for i, talent_category_id in ipairs(talent_mask) do
-		end
 	end
 
     return data
