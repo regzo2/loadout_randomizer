@@ -140,7 +140,7 @@ LoadoutRandomizerView._remove_widget = function(self, widget)
 	UIWidget.destroy(ui_renderer, widget)
 end
 
-LoadoutRandomizerView._setup_talent_widgets = function(self, talents)
+LoadoutRandomizerView._setup_talent_widgets = function(self, talents, talent_mask)
 	local node_types = LoadoutRandomizerViewSettings.settings_by_node_type
 
 	if self._node_widgets then
@@ -152,7 +152,20 @@ LoadoutRandomizerView._setup_talent_widgets = function(self, talents)
 
 	local widgets = {}
 
-	for talent_category_id, talent_category in pairs(talents) do
+	local ordered_talents = {}
+
+	for i, talent_category_id in ipairs(talent_mask) do
+		if talent_category_id then
+			local talent_category = talents[talent_category_id]
+			ordered_talents[i] = {}
+			ordered_talents[i].value = talent_category
+			ordered_talents[i].key = talent_category_id
+		end
+	end
+
+	for i, value in ipairs(ordered_talents) do
+		local talent_category_id = value.key
+		local talent_category = value.value
 		for talent_id, talent in pairs(talent_category) do
 			local node_type = node_types[talent_category_id]
 
@@ -205,7 +218,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 			mod:get("sett_randomize_talent_aura_id") and "aura" or nil,
 			mod:get("sett_randomize_talent_blitz_id") and "tactical" or nil, --blitz
 			mod:get("sett_randomize_talent_keystone_id") and "keystone" or nil,
-			}
+		}
 
 		local data = LoadoutRandomizerGenerator.generate_random_loadout(talent_mask)
 
@@ -221,7 +234,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 			melee_widget.content.item 			= data.weapons.melee.item
 			talent_bg_widget.content.archetype 	= data.archetype
 
-			self:_setup_talent_widgets(data.talents)
+			self:_setup_talent_widgets(data.talents, talent_mask)
 
 			local cb_on_reroll_finish = function()
 				randomize_button.content.hotspot.disabled = false
