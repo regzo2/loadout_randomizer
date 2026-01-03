@@ -117,25 +117,10 @@ local get_random_weighted_weapon = function(archetype, weapons_table)
 	return select_random_weapon(weapons)
 end
 
-local function random_element(tbl, selected_talents)
+local function random_element(tbl)
     local keys = {}
     for key, value in pairs(tbl) do
-		if selected_talents then
-			if value.requirements and value.requirements.incompatible_talent then
-				if selected_talents[value.requirements.incompatible_talent] then
-					--mod:echo("redact key: " .. key)
-					--nothing
-				else
-					--mod:echo("unredact key: " .. key)
-					table.insert(keys, key)
-				end
-			else
-				--mod:echo("e key: " .. key)
-				table.insert(keys, key)
-			end
-		else
-			table.insert(keys, key)
-		end
+		table.insert(keys, key)
     end
 
     local randomKey = math.random(#keys)
@@ -164,12 +149,12 @@ local get_filtered_talent_set = function(archetype, talent_set)
 	return talents_by_ex_group
 end
 
-local get_random_talents_from_sets = function(keystone_sets, selected_talents, roll_stoneless)
+local get_random_talents_from_sets = function(keystone_sets, roll_stoneless)
 	local talents = {}
 	local chance_for_keystoneless = mod:get("sett_keystoneless_chance_id")
 	for key, set in pairs(keystone_sets) do
 
-		local r_key = random_element(set, selected_talents)
+		local r_key = random_element(set)
 		local talent = set[r_key]
 
 		if roll_stoneless then
@@ -177,10 +162,6 @@ local get_random_talents_from_sets = function(keystone_sets, selected_talents, r
 		end
 
 		talents[r_key] = talent
-
-		if selected_talents then
-			selected_talents[r_key] = talents[r_key]
-		end
 	end
 	--mod:dump(talents, "" , 10)
 	return talents
@@ -200,8 +181,8 @@ local localize_talents = function(talents)
 	return talents_str
 end
 
-local get_random_talent_from_set = function(talents, selected_talents)
-	return talents[random_element(talents, selected_talents)]
+local get_random_talent_from_set = function(talents)
+	return talents[random_element(talents)]
 end
 
 LoadoutRandomizerGenerator.generate_random_loadout = function(talents_mask, archetype_name)
@@ -228,11 +209,46 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(talents_mask, arch
 	local selected_talents = {}
 
 	if talents_mask then
+
+		local roll_talents = function(talent_type)
+			local roll_stoneless = talent_type == "keystone"
+			local filtered_set = get_filtered_talent_set(data.archetype, class_data[arch_id].talents[talent_type])
+			local talents = get_random_talents_from_sets(filtered_set, roll_stoneless)
+			for talent_id, talent in pairs(talents) do
+				selected_talents[talent_id] = talent
+				selected_talents[talent_id].type = talent_type
+			end
+
+			data.talents[talent_type] = talents
+		end
+
 		data.talents = {}
-		for _, talent_type_id in pairs(talents_mask) do
-			local roll_stoneless = talent_type_id == "keystone"
-			local filtered_set = get_filtered_talent_set(data.archetype, class_data[arch_id].talents[talent_type_id])
-			data.talents[talent_type_id] = get_random_talents_from_sets(filtered_set, selected_talents, roll_stoneless)
+		-- get talents
+		for talent_type_id, talent_type in pairs(talents_mask) do
+			roll_talents(talent_type)
+		end
+
+		::restart::
+
+		for talent_type_id, talent_type in pairs(talents_mask) do
+			for talent_id, talent in pairs(data.talents[talent_type]) do
+				local conflicting_talent = talent.requirements and talent.requirements.incompatible_talent and selected_talents[talent.requirements.incompatible_talent]
+
+				if conflicting_talent and talent_id == "adamant_companion_coherency" then
+					mod:echo(talent_id .. " conflict: " .. conflicting_talent.type)
+				end
+
+				if conflicting_talent then
+					gbl_conflict = conflicting_talent
+					mod:echo("reroll " .. conflicting_talent.type)
+					selected_talents[talent.requirements.incompatible_talent] = nil
+					roll_talents(conflicting_talent.type)
+					goto restart
+				end
+			end
+		end
+
+		for i, talent_category_id in ipairs(talent_mask) do
 		end
 	end
 
