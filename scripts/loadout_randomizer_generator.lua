@@ -286,8 +286,6 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)
 				return
 			end
 		end
-		
-		gbl_m = talents_mask
 
 		-- get talents
 		for index, talent_type in ipairs(table.clone(talents_mask)) do

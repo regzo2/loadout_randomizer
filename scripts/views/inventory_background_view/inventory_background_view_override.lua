@@ -82,7 +82,7 @@ local _validate_loadout_modified = function (self, loadout, profile_preset, read
 
 				local player = self._preview_player
 				local profile = player:profile()
-                gbl_profile = profile
+                
 				local item_or_nil = type(item_data) == "table" and self:_get_inventory_item_by_id(gear_id) or self:_get_inventory_item_by_id(item_data)
 
 				if item_or_nil then
