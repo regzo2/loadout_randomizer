@@ -217,7 +217,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 		local player = Managers.player:local_player(local_player_id)
 		local archetype_name = player:archetype_name()
 
-		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout(archetype_name)
+		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout()
 
 		mod.randomizer_data = data
 
