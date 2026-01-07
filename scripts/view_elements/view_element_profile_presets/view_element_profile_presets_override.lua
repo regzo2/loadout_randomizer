@@ -26,7 +26,7 @@ local on_randomize_profile_preset_pressed = function (self)
         local profile_preset = ProfileUtils.get_profile_preset(profile_preset_id)
 
         if profile_preset.is_randomizer_profile then
-            --mod:echo("fuck yea")
+            -- nothing
         else
             profile_preset.is_randomizer_profile = true
         end
@@ -180,22 +180,3 @@ mod:hook_safe(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function
 	self:_force_update_scenegraph()
 	self:_sync_profile_buttons_items_status()
 end)
-
---[[
-mod:hook_safe(CLASS.ViewElementProfilePresets, "_sync_profile_buttons_items_status", function(self)
-	local profile_presets = ProfileUtils.get_profile_presets()
-	local num_profile_presets = profile_presets and #profile_presets or 0
-	local profile_buttons_widgets = self._profile_buttons_widgets
-
-	if num_profile_presets > 0 and profile_buttons_widgets then
-		for i = 1, #profile_buttons_widgets do
-			local widget = profile_buttons_widgets[i]
-			local content = widget.content
-			local profile_preset_id = content.profile_preset_id
-
-			content.missing_content = self._presets_id_warning[profile_preset_id]
-			content.modified_content = self._presets_id_modified[profile_preset_id]
-		end
-	end
-end)
-]]
