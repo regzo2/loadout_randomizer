@@ -5,6 +5,9 @@ local Archetypes = require("scripts/settings/archetype/archetypes")
 local UISettings = require("scripts/settings/ui/ui_settings")
 local ITEM_TYPES = UISettings.ITEM_TYPES
 local MasterItems = require("scripts/backend/master_items")
+local TalentBuilderViewSettings = require("scripts/ui/views/talent_builder_view/talent_builder_view_settings")
+local LoadoutRandomizerInventory = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_inventory")
+local talent_category_settings = TalentBuilderViewSettings.settings_by_node_type
 
 local LoadoutRandomizerGenerator = {}
 
@@ -131,34 +134,43 @@ local get_filtered_talent_set = function(archetype, talent_set)
 	local talents = talent_set
 	local talents_by_ex_group = {}
 
+	if not talents then return talents_by_ex_group end
+
+	local index = 1
 	for key, keystone in pairs(talents) do
-		local group = keystone.requirements.exclusive_group
-		if keystone.requirements.exclusive_group then
-			if talents_by_ex_group[group] == nil then
-				talents_by_ex_group[group] = {}
-			end
-			if keystone.requirements.incompatible_talent then
-				local incompat_key = keystone.requirements.incompatible_talent
-				local excluded_talent = talents[incompat_key]
-				talents_by_ex_group[group][incompat_key] = excluded_talent
-			end
-			talents_by_ex_group[group][key] = keystone
+		local group = keystone.requirements.exclusive_group or ("unique_" .. index)
+		index = index + 1
+
+		if talents_by_ex_group[group] == nil then
+			talents_by_ex_group[group] = {}
+		end
+		talents_by_ex_group[group][key] = keystone
+
+		if keystone.requirements.incompatible_talent then
+			local incompat_key = keystone.requirements.incompatible_talent
+			local excluded_talent = talents[incompat_key]
+			talents_by_ex_group[group][incompat_key] = excluded_talent
 		end
 	end
 
 	return talents_by_ex_group
 end
 
-local get_random_talents_from_sets = function(keystone_sets, roll_stoneless)
+local get_random_talents_from_sets = function(keystone_sets, talent_type)
 	local talents = {}
-	local chance_for_keystoneless = mod:get("sett_keystoneless_chance_id")
+	local chance_to_unroll = mod:get("sett_talent_" .. talent_type .. "_unroll_chance_id")
+	local max_talents = mod:get("sett_talent_" .. talent_type .. "_max_group_rolls_id")
+	local index = 0
 	for key, set in pairs(keystone_sets) do
+		index = index + 1
+
+		if index > max_talents then break end
 
 		local r_key = random_element(set)
 		local talent = set[r_key]
 
-		if roll_stoneless then
-			talent.unrolled = math.random() <= chance_for_keystoneless
+		if chance_to_unroll then
+			talent.unrolled = math.random() <= chance_to_unroll
 		end
 
 		talents[r_key] = talent
@@ -185,11 +197,39 @@ local get_random_talent_from_set = function(talents)
 	return talents[random_element(talents)]
 end
 
-LoadoutRandomizerGenerator.generate_random_loadout = function(talents_mask, archetype_name)
+local get_talents_mask = function()
+	local ordered_nodes = {}
+
+	for node_id, node in pairs(talent_category_settings) do
+		local include_talent_group = mod:get("sett_talent_".. node_id .. "_enabled_id") == true or false
+		if include_talent_group and node_id ~= "start" then
+			node.node_type = node_id
+			table.insert(ordered_nodes, node)
+		end
+	end
+
+	table.sort(ordered_nodes, function(a, b)
+		local a_order = mod:get("sett_talent_".. a.node_type .. "_order_id") or a.sort_order or 10
+		local b_order = mod:get("sett_talent_".. b.node_type .. "_order_id") or b.sort_order or 10
+        return a_order < b_order
+	end)
+
+	local talents_mask = {}
+
+	for index, node in ipairs(ordered_nodes) do
+		table.insert(talents_mask, tostring(node.node_type))
+	end
+
+	return talents_mask
+end
+
+LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)
 
     local data = {}
     data.class = {}
     local class_data = data.class
+
+	local talents_mask = get_talents_mask()
 
 	for name, archetype in pairs(Archetypes) do
 		class_data[name] = {}
@@ -210,37 +250,42 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(talents_mask, arch
 
 	if talents_mask then
 
-		local roll_talents = function(talent_type)
+		data.talents = {}
+
+		local roll_talents = function(talent_type, index)
 			local roll_stoneless = talent_type == "keystone"
-			local filtered_set = get_filtered_talent_set(data.archetype, class_data[arch_id].talents[talent_type])
-			local talents = get_random_talents_from_sets(filtered_set, roll_stoneless)
+			local talent_data = class_data[arch_id].talents[talent_type]
+
+			local filtered_set = get_filtered_talent_set(data.archetype, talent_data)
+			if not filtered_set then return end
+			local talents = get_random_talents_from_sets(filtered_set, talent_type)
 			for talent_id, talent in pairs(talents) do
 				selected_talents[talent_id] = talent
 				selected_talents[talent_id].type = talent_type
 			end
 
-			data.talents[talent_type] = talents
+			if talents ~= nil then
+				data.talents[talent_type] = talents
+			else
+				mod:echo("yes " .. talents_mask[index] .. " removed")
+				table.remove(talents_mask, index)
+				return
+			end
 		end
+		
+		gbl_m = talents_mask
 
-		data.talents = {}
 		-- get talents
-		for talent_type_id, talent_type in pairs(talents_mask) do
-			roll_talents(talent_type)
+		for index, talent_type in ipairs(table.clone(talents_mask)) do
+			roll_talents(talent_type, index)
 		end
 
 		::restart::
 
-		for talent_type_id, talent_type in pairs(talents_mask) do
+		for index, talent_type in ipairs(talents_mask) do
 			for talent_id, talent in pairs(data.talents[talent_type]) do
 				local conflicting_talent = talent.requirements and talent.requirements.incompatible_talent and selected_talents[talent.requirements.incompatible_talent]
-
-				if conflicting_talent and talent_id == "adamant_companion_coherency" then
-					mod:echo(talent_id .. " conflict: " .. conflicting_talent.type)
-				end
-
 				if conflicting_talent then
-					gbl_conflict = conflicting_talent
-					mod:echo("reroll " .. conflicting_talent.type)
 					selected_talents[talent.requirements.incompatible_talent] = nil
 					roll_talents(conflicting_talent.type)
 					goto restart
@@ -249,7 +294,9 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(talents_mask, arch
 		end
 	end
 
-    return data
+	LoadoutRandomizerInventory.apply_randomizer_loadout_to_profile_preset(data)
+
+    return data, talents_mask
 end
 
 return LoadoutRandomizerGenerator
