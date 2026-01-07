@@ -72,6 +72,7 @@ local talent_settings_subwidgets = function()
                     range           = { 0, 1 },
                     decimals_number = 2
                 },
+                --[[
                 {
                     setting_id    = "sett_talent_".. node_id .. "_freeroll_chance_id",
                     type            = "numeric",
@@ -79,6 +80,7 @@ local talent_settings_subwidgets = function()
                     range           = { 0, 1 },
                     decimals_number = 2
                 },
+                ]]
             }
 
             local talent_parent_widget = {
