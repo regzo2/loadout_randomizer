@@ -63,18 +63,20 @@ local set_nearest_inventory_item = function(inventory_items, profile_preset, slo
         local gear_id = item.__gear_id
         local master_item = item.__master_item
 
-        local is_valid_item = Items.slot_name(master_item) == slot_name and item_to_find.item_type == master_item.item_type and item_to_find.parent_pattern == master_item.parent_pattern
+        local is_valid_item = Items.slot_name(master_item) == slot_name 
+                              and item_to_find.item_type == master_item.item_type 
+                              and item_to_find.parent_pattern == master_item.parent_pattern
 
         if is_valid_item then
             local favorited = Items.is_item_id_favorited(gear_id)
             local item_level = master_item.itemLevel
             local item_rarity = master_item.rarity
             local weapon_template = master_item.weapon_template
+            local levenshtein_score = levenshtein(weapon_template, item_to_find.weapon_template)
 
             score = favorited and score + 50 or score
             score = score + item_level
             score = score + item_rarity * 10
-            local levenshtein_score = levenshtein(weapon_template, item_to_find.weapon_template)
             score = score - levenshtein_score * 50
 
             if master_item.traits then
@@ -153,7 +155,7 @@ LoadoutRandomizerInventory.apply_randomizer_loadout_to_profile_preset = function
         set_nearest_inventory_item(inventory_items, profile_preset, "slot_primary", data.weapons.melee.item)
         set_nearest_inventory_item(inventory_items, profile_preset, "slot_secondary", data.weapons.ranged.item)
 
-        Managers.save:queue_save()
+        ProfileUtils.save_active_profile_preset_id(profile_preset.id)
 	end)
 end
 
