@@ -130,6 +130,38 @@ local function random_element(tbl)
     return keys[randomKey]
 end
 
+local random_talent_from_set = function(talent_set)
+	local weighted_count = 0
+
+	local weighted_talent_set = {}
+
+	for talent_id, talent in pairs(table.clone(talent_set)) do
+		local talent_weight = mod:get("talent_" .. talent_id .. "_weight_id") or 1
+		mod:echo(talent_weight)
+		talent.weight = talent_weight
+		talent.key = talent_id
+		weighted_count = weighted_count + talent_weight
+		table.insert(weighted_talent_set, talent)
+	end
+
+	local weighted_target = math.random() * weighted_count
+	local weighted_index = 0
+	local index = 0
+
+	local selected_talent
+
+	while weighted_index < weighted_target do
+		selected_talent = weighted_talent_set[index+1]
+		index = (index + 1) % (#weighted_talent_set)
+
+		if selected_talent then
+			weighted_index = weighted_index + selected_talent.weight
+		end
+	end
+
+	return selected_talent.key
+end
+
 local get_filtered_talent_set = function(archetype, talent_set)
 	local talents = talent_set
 	local talents_by_ex_group = {}
@@ -156,17 +188,17 @@ local get_filtered_talent_set = function(archetype, talent_set)
 	return talents_by_ex_group
 end
 
-local get_random_talents_from_sets = function(keystone_sets, talent_type)
+local get_random_talents_from_sets = function(talent_sets, talent_type)
 	local talents = {}
 	local chance_to_unroll = mod:get("sett_talent_" .. talent_type .. "_unroll_chance_id")
 	local max_talents = mod:get("sett_talent_" .. talent_type .. "_max_group_rolls_id")
 	local index = 0
-	for key, set in pairs(keystone_sets) do
+	for key, set in pairs(talent_sets) do
 		index = index + 1
 
 		if index > max_talents then break end
 
-		local r_key = random_element(set)
+		local r_key = random_talent_from_set(set)
 		local talent = set[r_key]
 
 		if chance_to_unroll then
@@ -177,24 +209,6 @@ local get_random_talents_from_sets = function(keystone_sets, talent_type)
 	end
 	--mod:dump(talents, "" , 10)
 	return talents
-end
-
-local localize_talents = function(talents)
-	local talents_str = ""
-	local index = 1
-	for key, keystone in pairs(talents) do
-		if not keystone.display_name then
-			talents_str = talents_str .. "\n Keystone " .. index .. ":	 " .. "No Keystone!"
-		else
-			talents_str = talents_str .. "\n Keystone " .. index .. ":	 " .. Localize(keystone.display_name)
-		end
-		index = index + 1
-	end
-	return talents_str
-end
-
-local get_random_talent_from_set = function(talents)
-	return talents[random_element(talents)]
 end
 
 local get_talents_mask = function()
