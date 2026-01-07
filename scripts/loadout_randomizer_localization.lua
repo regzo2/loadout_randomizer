@@ -38,6 +38,12 @@ local localizations = {
     talent_group_id = {
         en = "Talent Settings",
     },
+    archetype_generic_group_id = {
+        en = "Operative Modifiers",
+    },
+    talent_weight_group_id = {
+        en = "Talent Weights",
+    },
     sett_randomize_talent_ability_id = {
         en = "Randomize Ability",
     },
@@ -50,8 +56,23 @@ local localizations = {
     sett_randomize_talent_aura_id = {
         en = "Randomize Aura",
     },
-    sett_keystoneless_chance_id = {
-        en = "Chance for Keystoneless",
+    loc_talent_enabled_id = {
+        en = "Enabled",
+    },
+    loc_talent_unroll_chance_id = {
+        en = "Unroll Chance",
+    },
+    loc_talent_freeroll_chance_id = {
+        en = "Free Roll Chance",
+    },
+    loc_talent_order_id = {
+        en = "Order",
+    },
+    loc_talent_max_group_rolls_id = {
+        en = "Max Rolls",
+    },
+    loc_talent_ability_unrolled = {
+        en = "Ability Unrolled!",
     },
 }
 
@@ -59,19 +80,86 @@ local UISettings = require("scripts/settings/ui/ui_settings")
 local ITEM_TYPES = UISettings.ITEM_TYPES
 local MasterItems = require("scripts/backend/master_items")
 local WeaponTemplates = require("scripts/settings/equipment/weapon_templates/weapon_templates")
+local Archetypes = require("scripts/settings/archetype/archetypes")
+local TalentBuilderViewSettings = require("scripts/ui/views/talent_builder_view/talent_builder_view_settings")
+local talent_category_settings = TalentBuilderViewSettings.settings_by_node_type
 
 local patterns = UISettings.weapon_patterns
 
+local localization = Managers.localization and Managers.localization:language()
+
 for pattern_name, pattern in pairs(patterns) do
     localizations["pattern_".. pattern_name .. "_group_id"] = {}
-    localizations["pattern_".. pattern_name .. "_group_id"]["en"] = Localize(pattern.display_name)
+    localizations["pattern_".. pattern_name .. "_group_id"][localization] = Localize(pattern.display_name)
     for _, mark in pairs(pattern.marks) do
         if WeaponTemplates[mark.name] then
             local loc = Localize(string.format("loc_weapon_pattern_%s", mark.name)) .. " " .. Localize(string.format("loc_weapon_mark_%s", mark.name)) .. " " .. Localize(string.format("loc_weapon_family_%s", mark.name))
             localizations["weapon_".. mark.name .. "_weight_id"] = {}
-            localizations["weapon_".. mark.name .. "_weight_id"]["en"] = loc
+            localizations["weapon_".. mark.name .. "_weight_id"][localization] = loc
         end
     end
 end
+
+local map_talent_tree_to_data = function(archetype)
+	local all_talent_data = archetype.talents
+	local talent_tree_path = string.format("scripts/ui/views/talent_builder_view/layouts/%s_tree", archetype.name)
+	local exists = Application.can_get_resource("lua", talent_tree_path)
+	local tree = require(talent_tree_path)
+
+	if not exists or not tree then return end
+
+	local talents = {}
+
+	for key, node in pairs(tree.nodes) do
+		if node.type ~= "start" and all_talent_data[node.talent] then
+			if not talents[node.type] then
+				talents[node.type] = {}
+			end
+
+			talents[node.type][node.talent] = {}
+			talents[node.type][node.talent].display_name = all_talent_data[node.talent].display_name
+			talents[node.type][node.talent].icon = node.icon
+			talents[node.type][node.talent].requirements = node.requirements
+		end
+	end
+
+    return talents
+end
+
+for _, archetype in pairs(Archetypes) do
+    local categories = map_talent_tree_to_data(archetype)
+
+    for category_id, category in pairs(categories) do
+        localizations["archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id"] = {}
+        localizations["archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id"][localization] = Localize(talent_category_settings[category_id].display_name)
+        for talent_id, talent in pairs(category) do
+            localizations["talent_".. talent_id .. "_weight_id"] = {}
+            localizations["talent_".. talent_id .. "_weight_id"][localization] = Localize(talent.display_name)
+        end
+    end
+
+    localizations["archetype_".. archetype.name .. "_group_id"] = {}
+    localizations["archetype_".. archetype.name .. "_group_id"][localization] = Localize(archetype.archetype_name)
+end
+
+for node_id, node in pairs(talent_category_settings) do
+    localizations["sett_talent_".. node_id .."_enabled_id"] = {}
+    localizations["sett_talent_".. node_id .."_enabled_id"][localization] = localizations.loc_talent_enabled_id[localization]
+
+    localizations["sett_talent_".. node_id .. "_order_id"] = {}
+    localizations["sett_talent_".. node_id .. "_order_id"][localization] = localizations.loc_talent_order_id[localization]
+
+    localizations["sett_talent_".. node_id .. "_unroll_chance_id"] = {}
+    localizations["sett_talent_".. node_id .. "_unroll_chance_id"][localization] = localizations.loc_talent_unroll_chance_id[localization]
+
+    localizations["sett_talent_".. node_id .. "_freeroll_chance_id"] = {}
+    localizations["sett_talent_".. node_id .. "_freeroll_chance_id"][localization] = localizations.loc_talent_freeroll_chance_id[localization]
+
+    localizations["sett_talent_".. node_id .. "_max_group_rolls_id"] = {}
+    localizations["sett_talent_".. node_id .. "_max_group_rolls_id"][localization] = localizations.loc_talent_max_group_rolls_id[localization]
+
+    localizations["talent_" .. node_id .. "_group_id"] = {}
+    localizations["talent_" .. node_id .. "_group_id"][localization] = Localize(node.display_name)
+end 
 
 return localizations
