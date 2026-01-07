@@ -1,6 +1,6 @@
 local mod = get_mod("loadout_randomizer")
 
-local LoadoutRandomizerViewDefinitions = mod:io_dofile("loadout_randomizer/scripts/views/loadout_randomizer_view_defs")
+local LoadoutRandomizerViewDefinitions = mod:io_dofile("loadout_randomizer/scripts/views/loadout_randomizer_view/loadout_randomizer_view_defs")
 local widget_definitions = LoadoutRandomizerViewDefinitions.node_widget_definitions
 
 local default_node_scene_definition = {
@@ -14,8 +14,8 @@ local default_node_scene_definition = {
 
 local settings_by_node_type = {
     default = {
+        node_definition = widget_definitions.node_default_icon,
         node_scenegraph_definition = default_node_scene_definition,
-        --node_definition = node_widget_definitions.
     },
     aura = {
         node_definition = widget_definitions.node_aura_icon,

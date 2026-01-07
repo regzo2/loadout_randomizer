@@ -17,7 +17,7 @@ end
 mod.on_setting_changed()
 
 local view_name = "loadout_randomizer"
-local view_path = "loadout_randomizer/scripts/views/loadout_randomizer_view"
+local view_path = "loadout_randomizer/scripts/views/loadout_randomizer_view/loadout_randomizer_view"
 
 mod:add_require_path(view_path)
 

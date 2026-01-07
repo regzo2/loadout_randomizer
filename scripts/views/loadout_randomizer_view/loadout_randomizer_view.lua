@@ -10,8 +10,8 @@ local UIWidget = require("scripts/managers/ui/ui_widget")
 
 local LoadoutRandomizerGenerator = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_generator")
 
-local LoadoutRandomizerViewSettings = mod:io_dofile("loadout_randomizer/scripts/views/loadout_randomizer_view_settings")
-local LoadoutRandomizerViewDefinitions = mod:io_dofile("loadout_randomizer/scripts/views/loadout_randomizer_view_defs")
+local LoadoutRandomizerViewSettings = mod:io_dofile("loadout_randomizer/scripts/views/loadout_randomizer_view/loadout_randomizer_view_settings")
+local LoadoutRandomizerViewDefinitions = mod:io_dofile("loadout_randomizer/scripts/views/loadout_randomizer_view/loadout_randomizer_view_defs")
 
 LoadoutRandomizerView = class("LoadoutRandomizerView", "BaseView")
 
@@ -167,7 +167,7 @@ LoadoutRandomizerView._setup_talent_widgets = function(self, talents, talent_mas
 		local talent_category_id = value.key
 		local talent_category = value.value
 		for talent_id, talent in pairs(talent_category) do
-			local node_type = node_types[talent_category_id]
+			local node_type = node_types[talent_category_id] or node_types.default
 
 			local widget_name = "talent_".. talent_category_id .."_node_" .. talent_id
 			local node_widget_definition = UIWidget.create_definition(node_type.node_definition, widget_name)
@@ -213,16 +213,13 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 	local cb_on_item_roll = function()
 		randomize_button.content.hotspot.disabled = true
 
-		local talent_mask = {
-			mod:get("sett_randomize_talent_ability_id") and "ability" or nil,
-			mod:get("sett_randomize_talent_aura_id") and "aura" or nil,
-			mod:get("sett_randomize_talent_blitz_id") and "tactical" or nil, --blitz
-			mod:get("sett_randomize_talent_keystone_id") and "keystone" or nil,
-		}
+		local local_player_id = 1
+		local player = Managers.player:local_player(local_player_id)
+		local archetype_name = player:archetype_name()
 
-		local data = LoadoutRandomizerGenerator.generate_random_loadout(talent_mask)
+		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout(archetype_name)
 
-		--gbl_d = data
+		mod.randomizer_data = data
 
 		local i = 0.6
 		local iter = 0.6

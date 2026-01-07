@@ -20,6 +20,7 @@ local aura_gradient_map = "content/ui/textures/color_ramps/talent_aura"
 local ability_gradient_map = "content/ui/textures/color_ramps/talent_ability"
 local keystone_gradient_map = "content/ui/textures/color_ramps/talent_keystone"
 local blitz_gradient_map = "content/ui/textures/color_ramps/talent_blitz"
+local default_gradient_map = "content/ui/textures/color_ramps/talent_default"
 
 local scenegraph_definition = {
 	screen = {
@@ -644,6 +645,80 @@ local widget_definitions = {
 }
 
 local node_widget_definitions = {
+    node_default_icon = {
+        {
+			pass_type = "texture",
+			value = "content/ui/materials/frames/talents/talent_icon_container",
+            style_id = "icon",
+            value_id = "icon",
+			style = {
+                material_values = {
+                    frame = "content/ui/textures/frames/talents/circular_frame",
+					icon_mask = "content/ui/textures/frames/talents/circular_frame_mask",
+                    icon = "content/ui/textures/icons/talents/zealot/zealot_aura_the_emperor_demand",
+                    gradient_map = default_gradient_map,
+					intensity = -1,
+					saturation = 1,
+				},
+                size = talent_node_size,
+				horizontal_alignment = "center",
+				vertical_alignment = "upper",
+			},
+            change_function = function(content, style)
+                if not content or not content.talent then
+                    return
+                end
+                style.material_values.icon = content.talent.icon
+            end,
+		},
+        {
+			pass_type = "texture",
+			value = "content/ui/materials/frames/talents/talent_icon_container",
+			style = {
+                material_values = {
+                    frame = "content/ui/textures/frames/talents/circular_frame",
+				},
+                size = talent_node_size,
+                offset = { 8, 8, -1 },
+                color = {64, 0, 0, 0},
+				horizontal_alignment = "center",
+				vertical_alignment = "upper",
+			},
+		},
+        {
+            pass_type = "text",
+            value_id = "text",
+            style_id = "text",
+            value = "Sample",--Localize("loc_item_information_stats_title_modifiers"),
+            style = {
+                font_type = "proxima_nova_bold",
+                font_size = 24,
+                text_vertical_alignment = "top",
+                text_horizontal_alignment = "center",
+                text_color = Color.terminal_text_header(255, true),
+                offset = { 0, 150, 1 },
+                horizontal_alignment = "center",
+                size = {talent_node_size[1], talent_node_size[2]},
+            },
+            change_function = function(content, style)
+                if not content or not content.talent then
+                    return
+                end
+
+                local text = Localize(content.talent.display_name)
+
+                if #content.text > 25 then
+                    style.font_size = math.max(14, -1.2 * (#content.text - 25) + 22)
+                end
+                
+                if content.talent.unrolled then
+                    content.text = mod:localize("loc_talent_default_unrolled")
+                else
+                    content.text = text
+                end
+            end,
+        },
+    },
     node_ability_icon = {
         {
 			pass_type = "texture",
@@ -717,10 +792,10 @@ local node_widget_definitions = {
                     style.font_size = math.max(14, -1.2 * (#content.text - 25) + 22)
                 end
                 
-                if not content.text_override then
-                    content.text = text
+                if content.talent.unrolled then
+                    content.text = mod:localize("loc_talent_ability_unrolled")
                 else
-                    content.text = content.text_override
+                    content.text = text
                 end
             end,
         },
@@ -791,10 +866,10 @@ local node_widget_definitions = {
                     style.font_size = math.max(14, -1.2 * (#content.text - 25) + 22)
                 end
                 
-                if not content.text_override then
-                    content.text = text
+                if content.talent.unrolled then
+                    content.text = mod:localize("loc_talent_aura_unrolled")
                 else
-                    content.text = content.text_override
+                    content.text = text
                 end
             end,
         },
@@ -866,10 +941,10 @@ local node_widget_definitions = {
                     style.font_size = math.max(14, -1.2 * (#content.text - 25) + 22)
                 end
                 
-                if not content.text_override then
-                    content.text = text
+                if content.talent.unrolled then
+                    content.text = mod:localize("loc_talent_blitz_unrolled")
                 else
-                    content.text = content.text_override
+                    content.text = text
                 end
             end,
         },
@@ -940,10 +1015,10 @@ local node_widget_definitions = {
                     style.font_size = math.max(14, -1.2 * (#content.text - 25) + 22)
                 end
                 
-                if not content.text_override then
-                    content.text = text
+                if content.talent.unrolled then
+                    content.text = mod:localize("loc_talent_keystone_unrolled")
                 else
-                    content.text = content.text_override
+                    content.text = text
                 end
             end,
         },
@@ -1188,7 +1263,6 @@ local animations = {
                     style.icon.material_values.intensity = ((-(ease_progress - 1)) ^ 2) - 1
                     style.text.text_color = Color.terminal_text_header((progress ^ 2) * 255, true)
                     widget.alpha_multiplier = math.max(math.min(1, ease_progress * 2),0)
-                    widget.content.text_override = "Keystoneless!"
 
                     if (not params.played_sound_1) and ease_progress >= 0.2 then
                         parent:_play_sound(UISoundEvents.talent_node_select_stat)
