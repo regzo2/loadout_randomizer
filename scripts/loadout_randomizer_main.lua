@@ -6,7 +6,9 @@ local ITEM_TYPES = UISettings.ITEM_TYPES
 local MasterItems = require("scripts/backend/master_items")
 local LoadoutRandomizerGenerator = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_generator")
 
-mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_tests")
+--mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_tests")
+mod:io_dofile("loadout_randomizer/scripts/views/inventory_background_view/inventory_background_view_override")
+mod:io_dofile("loadout_randomizer/scripts/view_elements/view_element_profile_presets/view_element_profile_presets_override")
 
 mod.on_setting_changed = function()
 	mod.sett_weapon_display_format 	= mod:get("sett_weapon_display_format_id")
@@ -77,3 +79,15 @@ end
 --mod.on_key_generate_randomizer_data = display_random_loadout
 mod:command("randomize_loadout", mod:localize("generate_loadout_cmd_description_id"), mod.open_view)
 mod:command("rl", mod:localize("generate_loadout_cmd_description_id"), mod.open_view)
+
+mod:command("debug_scenegraph", "", function()
+    mod.debugging = not mod.debugging
+end)
+
+local UIRenderer = mod:original_require("scripts/managers/ui/ui_renderer")
+
+mod:hook_safe(UIRenderer, "begin_pass", function(self, ui_scenegraph, input_service, dt, render_settings)
+    if mod.debugging then
+        UIRenderer.debug_render_scenegraph(self, ui_scenegraph)
+    end
+end)
