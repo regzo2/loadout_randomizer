@@ -217,6 +217,29 @@ local weapon_weight_subwidgets = function()
 	return widget
 end
 
+local randomize_cosmetics_subwidgets = function()
+    local ItemSlotSettings = require("scripts/settings/item/item_slot_settings")
+
+    local widget = {}
+
+    for slot_name, slot in pairs(ItemSlotSettings) do
+        if slot.equipped_in_inventory then
+            local slot_subwidget = {
+                setting_id      = "sett_".. slot_name .. "_enabled_id",
+                type            = "checkbox",
+                default_value   = true,
+            }
+            table.insert(widget, slot_subwidget)
+        end
+    end
+
+    table.sort(widget, function(a,b)
+        return a.setting_id > b.setting_id
+    end)
+
+	return widget
+end
+
 return {
     name = mod:localize("mod_name"),
     description = mod:localize("mod_description"),
@@ -266,6 +289,11 @@ return {
                         default_value   = true,
                     },
                 },
+            },
+            {
+                setting_id    = "cosmetic_group_id",
+                type          = "group",
+                sub_widgets   = randomize_cosmetics_subwidgets(),
             },
             {
                 setting_id    = "talent_group_id",

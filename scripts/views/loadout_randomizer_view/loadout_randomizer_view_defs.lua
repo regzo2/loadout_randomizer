@@ -1041,6 +1041,40 @@ local anim_lerp = function(from, to, t)
 end
 
 local animations = {
+    on_init = {
+		{
+			end_time = 0.6,
+			name = "move",
+			start_time = 0,
+			init = function (parent, ui_scenegraph, scenegraph_definition, widgets, params)
+				parent._render_settings.alpha_multiplier = 0
+
+                local function contains_initial_widgets(widget)
+                    local base_widgets = {
+                        "randomize_weapon_ranged_icon",
+                        "randomize_weapon_melee_icon",
+                        "weapon_divider",
+                        "talent_divider",
+                    }
+
+                    for _, widget_name in pairs(base_widgets) do
+                        if widget_name == widget.name then 
+                            return true 
+                        end
+                    end
+
+                    return false
+                end
+
+                for key, widget in pairs(widgets) do
+                    if contains_initial_widgets(widget) then
+                        widget.alpha_multiplier = 0
+                    end
+                end
+
+			end,
+		},
+	},
 	on_enter = {
 		{
 			end_time = 0.6,

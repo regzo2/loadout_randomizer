@@ -4,44 +4,39 @@ local ViewElementProfilePresetsSettings = require("scripts/ui/view_elements/view
 local ProfileUtils = require("scripts/utilities/profile_utils")
 local UISoundEvents = require("scripts/settings/ui/ui_sound_events")
 
-local LoadoutRandomizerInventory = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_inventory")
+local LoadoutRandomizerProfileUtils = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_profile_utils")
 local Definitions = mod:io_dofile("loadout_randomizer/scripts/view_elements/view_element_profile_presets/view_element_profile_presets_override_defs")
 
 local randomizer_profile_widget
 
-local on_randomize_profile_preset_pressed = function (self)
-	local profile_buttons_widgets = self._profile_buttons_widgets
-
+local on_randomize_profile_preset_pressed = function (self, is_active)
     local widget = randomizer_profile_widget
     local content = widget.content
     local hotspot = content.hotspot
 
-    hotspot.is_selected = true
+    hotspot.is_selected = is_active
 
-    local profile_preset_id = content.profile_preset_id
+    if is_active and content.profile_preset_id ~= self._active_profile_preset_id then
+        local profile_preset = LoadoutRandomizerProfileUtils.get_randomizer_profile()
+		self._active_profile_preset_id = profile_preset_id
 
-    if profile_preset_id ~= self._active_profile_preset_id then
-        self._active_profile_preset_id = profile_preset_id
-        ProfileUtils.save_active_profile_preset_id(profile_preset_id)
-        local profile_preset = ProfileUtils.get_profile_preset(profile_preset_id)
-
-        if profile_preset.is_randomizer_profile then
-            -- nothing
-        else
-            profile_preset.is_randomizer_profile = true
-        end
+		ProfileUtils.save_active_profile_preset_id(profile_preset.id)
         
-        Managers.save:queue_save()
+        LoadoutRandomizerProfileUtils.save_randomizer_profile(profile_preset)
         Managers.event:trigger("event_on_profile_preset_changed", profile_preset)
     end
 end
 
+mod:hook_safe(CLASS.ViewElementProfilePresets, "init", function(self, ...)
+    self._rando_missing_content = false
+	self._rando_modified_content = false
+end)
+
 mod:hook_safe(CLASS.ViewElementProfilePresets, "on_profile_preset_index_change", function(self, index, ignore_activation, on_preset_deleted, ignore_sound)
     if randomizer_profile_widget == nil then return end
 
-    if index == 256 then
-        on_randomize_profile_preset_pressed(self)
-    end
+	local is_randomizer_profile = index == 256
+	on_randomize_profile_preset_pressed(self, is_randomizer_profile)
 end)
 
 local create_randomizer_widget = function(self, profile_preset)
@@ -54,11 +49,18 @@ local create_randomizer_widget = function(self, profile_preset)
 
     local widget = self:_create_widget(widget_name, profile_preset_button)
 
+	local BetterLoadoutsMod = get_mod("BetterLoadouts")
+
     local offset = widget.offset
 
-    offset[1] = -(#self._profile_buttons_widgets * button_width + (#self._profile_buttons_widgets - 1) * button_spacing) - 50
+	if BetterLoadoutsMod then
+		offset[1] = 0
+		offset[2] = 815
+	else
+    	offset[1] = -(#self._profile_buttons_widgets * button_width + (#self._profile_buttons_widgets - 1) * button_spacing) - 50
+	end
 
-    local is_selected = profile_preset.is_randomizer_profile
+    local is_selected = profile_preset.id == ProfileUtils.get_active_profile_preset_id()
     local content = widget.content
     local hotspot = content.hotspot
 
@@ -82,101 +84,45 @@ local create_randomizer_widget = function(self, profile_preset)
 end
 
 mod:hook_safe(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function(self)
-    local profile_buttons_widgets = self._profile_buttons_widgets
+	local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-	if profile_buttons_widgets then
-		for i = 1, #profile_buttons_widgets do
-			local widget = profile_buttons_widgets[i]
-			local name = widget.name
-
-			self:_unregister_widget_name(name)
-		end
-
-		table.clear(profile_buttons_widgets)
-	else
-		profile_buttons_widgets = {}
+	if randomizer_profile then
+		create_randomizer_widget(self, randomizer_profile)
 	end
 
-	local button_width = 44
-	local button_spacing = 6
-	local total_width = 0
-	local optional_preset_icon_reference_keys = ViewElementProfilePresetsSettings.optional_preset_icon_reference_keys
-	local optional_preset_icons_lookup = ViewElementProfilePresetsSettings.optional_preset_icons_lookup
-	local definitions = self._definitions
-	local profile_preset_button = definitions.profile_preset_button
-	local active_profile_preset_id = ProfileUtils.get_active_profile_preset_id()
-	local profile_presets_base = ProfileUtils.get_profile_presets()
-    local profile_presets = {}
-
-    local randomizer_profile = LoadoutRandomizerInventory.get_randomizer_profile()
-
-    for index, preset in ipairs(profile_presets_base) do
-        is_randomizer_profile = preset.is_randomizer_profile
-        if is_randomizer_profile then
-            --randomizer_profile = preset
-        else
-            table.insert(profile_presets, preset)
-        end
-    end
-
-	local num_profile_presets = profile_presets and #profile_presets
-
-	for i = num_profile_presets, 1, -1 do
-		local profile_preset = profile_presets[i]
-		local profile_preset_id = profile_preset and profile_preset.id
-		local custom_icon_key = profile_preset and profile_preset.custom_icon_key
-		local widget_name = "profile_button_" .. i
-		local widget = self:_create_widget(widget_name, profile_preset_button)
-
-		profile_buttons_widgets[i] = widget
-
-		local offset = widget.offset
-
-		offset[1] = -total_width
-
-		local content = widget.content
-		local hotspot = content.hotspot
-
-		hotspot.pressed_callback = callback(self, "on_profile_preset_index_change", i)
-		hotspot.right_pressed_callback = callback(self, "on_profile_preset_index_customize", i)
-
-		local is_selected = profile_preset_id == active_profile_preset_id
-
-		if is_selected then
-			self._active_profile_preset_id = profile_preset_id
-		end
-
-		hotspot.is_selected = is_selected
-
-		local default_icon_index = math.index_wrapper(i, #optional_preset_icon_reference_keys)
-		local default_icon_key = optional_preset_icon_reference_keys[default_icon_index]
-		local default_icon = optional_preset_icons_lookup[custom_icon_key or default_icon_key]
-
-		content.icon = default_icon
-		content.profile_preset_id = profile_preset_id
-		total_width = total_width + button_width
-
-		if i > 1 then
-			total_width = total_width + button_spacing
-		end
-	end
-
-	self._profile_buttons_widgets = profile_buttons_widgets
-
-    if mod.randomizer_data then
-        local local_player_id = 1
-        local player = Managers.player:local_player(local_player_id)
-
-        local archetype_name = player:archetype_name()
-
-        if mod.randomizer_data.archetype.name == archetype_name then
-            create_randomizer_widget(self, randomizer_profile)
-        end
-    end
-
-	local panel_width = total_width + button_width + 45
-
-	self:_set_scenegraph_size("profile_preset_button_panel", panel_width)
-	self:_force_update_scenegraph()
 	self:_sync_profile_buttons_items_status()
+end)
+
+mod:hook_safe(CLASS.ViewElementProfilePresets, "show_profile_preset_missing_items_warning", function(self, is_missing_content, is_modified_content, optional_preset_id)
+
+	local active_profile_preset_id = optional_preset_id or self._active_profile_preset_id
+
+	local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
+	if randomizer_profile.is_active then
+		local profile_buttons_widgets = self._profile_buttons_widgets
+
+		local widget = randomizer_profile_widget
+		local content = widget.content
+		local profile_preset_id = content.profile_preset_id
+
+		if profile_preset_id == active_profile_preset_id then
+			content.missing_content = is_missing_content
+			content.modified_content = is_modified_content
+			self._rando_missing_content = is_missing_content
+			self._rando_modified_content = is_modified_content
+		end
+	end
+end)
+
+mod:hook_safe(CLASS.ViewElementProfilePresets, "_sync_profile_buttons_items_status", function(self)
+
+	local widget = randomizer_profile_widget
+
+	if widget then
+		local content = widget.content
+		local profile_preset_id = content.profile_preset_id
+
+		content.missing_content = self._rando_missing_content
+		content.modified_content = self._rando_modified_content
+	end
 end)

@@ -6,7 +6,7 @@ local UISettings = require("scripts/settings/ui/ui_settings")
 local ITEM_TYPES = UISettings.ITEM_TYPES
 local MasterItems = require("scripts/backend/master_items")
 local TalentBuilderViewSettings = require("scripts/ui/views/talent_builder_view/talent_builder_view_settings")
-local LoadoutRandomizerInventory = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_inventory")
+local LoadoutRandomizerProfile = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_profile")
 local talent_category_settings = TalentBuilderViewSettings.settings_by_node_type
 
 local LoadoutRandomizerGenerator = {}
@@ -137,7 +137,6 @@ local random_talent_from_set = function(talent_set)
 
 	for talent_id, talent in pairs(table.clone(talent_set)) do
 		local talent_weight = mod:get("talent_" .. talent_id .. "_weight_id") or 1
-		mod:echo(talent_weight)
 		talent.weight = talent_weight
 		talent.key = talent_id
 		weighted_count = weighted_count + talent_weight
@@ -237,9 +236,27 @@ local get_talents_mask = function()
 	return talents_mask
 end
 
-LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)
+local get_best_matching_profile = function(archetype_name)
+	local profiles = mod.all_profiles_data and mod.all_profiles_data.profiles
 
-    local data = {}
+	if not profiles then 
+		return nil 
+	end
+
+	local best_matching_profile
+
+	for _, profile in pairs(profiles) do
+		--mod:dump(profile, "prof", 1)
+		if profile.archetype.name == archetype_name then
+			best_matching_profile = profile
+		end
+	end
+
+	return best_matching_profile
+end
+
+LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)	
+	local data = {}
     data.class = {}
     local class_data = data.class
 
@@ -253,6 +270,7 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)
 	end
 
 	data.archetype = archetype_name and Archetypes[archetype_name] or Archetypes[random_element(Archetypes)]
+	data.profile = get_best_matching_profile(data.archetype.name)
 	local arch_id = data.archetype.name
 
 	data.weapons = {}
@@ -281,7 +299,6 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)
 			if talents ~= nil then
 				data.talents[talent_type] = talents
 			else
-				mod:echo("yes " .. talents_mask[index] .. " removed")
 				table.remove(talents_mask, index)
 				return
 			end
@@ -306,7 +323,9 @@ LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)
 		end
 	end
 
-	LoadoutRandomizerInventory.apply_randomizer_loadout_to_profile_preset(data)
+	LoadoutRandomizerProfile.apply_randomizer_loadout_to_profile_preset(data)
+
+	mod.randomizer_data = data
 
     return data, talents_mask
 end

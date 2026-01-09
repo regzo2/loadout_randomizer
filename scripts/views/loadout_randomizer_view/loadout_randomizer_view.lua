@@ -79,16 +79,27 @@ LoadoutRandomizerView.event_register_character_spawn_point = function (self, spa
 	self._spawn_point_unit = spawn_point_unit
 end
 
-LoadoutRandomizerView.on_enter = function(self)
-	LoadoutRandomizerView.super.on_enter(self)
-    
-	--self:_setup_background_world("content/levels/ui/class_selection/class_selection_zealot/class_selection_zealot")
+LoadoutRandomizerView._setup_widgets = function(self)
 	self:_setup_input_legend()
 	self:_setup_loadout_widgets()
 
-	--gbl_self = self
+	self:_start_animation("on_enter", self._widgets, self)
+end
 
-    self:_start_animation("on_enter", self._widgets, self)
+LoadoutRandomizerView.on_enter = function(self)
+	LoadoutRandomizerView.super.on_enter(self)
+	self:_start_animation("on_init", self._widgets, self)
+
+	if not mod.all_profiles_data then
+		Managers.data_service.profiles:fetch_all_profiles():next(function (profile_data)
+			mod.all_profiles_data = profile_data
+			self:_setup_widgets()
+		end):catch(function (error)
+			--mod:echo("error for some reason")
+		end)  
+	else
+		self:_setup_widgets()
+	end
 end
 
 LoadoutRandomizerView._setup_input_legend = function(self)
@@ -217,9 +228,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 		local player = Managers.player:local_player(local_player_id)
 		local archetype_name = player:archetype_name()
 
-		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout()
-
-		mod.randomizer_data = data
+		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout("broker")
 
 		local i = 0.6
 		local iter = 0.6

@@ -29,7 +29,7 @@ local ALLOWED_DUPLICATE_SLOTS = InventoryBackgroundViewSettings.allowed_duplicat
 local ALLOWED_EMPTY_SLOTS = InventoryBackgroundViewSettings.allowed_empty_slots
 local IGNORED_SLOTS = InventoryBackgroundViewSettings.ignored_validation_slots
 
-local LoadoutRandomizerInventory = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_inventory")
+local LoadoutRandomizerProfileUtils  = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_profile_utils")
 
 
 mod:hook_safe(CLASS.InventoryBackgroundView, "init", function (self, ...)
@@ -50,6 +50,7 @@ local _validate_loadout_modified = function (self, loadout, profile_preset, read
 	local modified_slots = {}
 	local duplicated_slots = {}
 	local only_show_slot_as_invalid = {}
+    local invalid_slot_data = {}
 
 	if not self._is_own_player or self._is_readonly then
 		return invalid_slots, modified_slots, duplicated_slots
@@ -82,7 +83,7 @@ local _validate_loadout_modified = function (self, loadout, profile_preset, read
 
 				local player = self._preview_player
 				local profile = player:profile()
-                
+
 				local item_or_nil = type(item_data) == "table" and self:_get_inventory_item_by_id(gear_id) or self:_get_inventory_item_by_id(item_data)
 
 				if item_or_nil then
@@ -94,15 +95,19 @@ local _validate_loadout_modified = function (self, loadout, profile_preset, read
 					end
 
                     if mod.randomizer_data then
-                        local randomizer_profile = LoadoutRandomizerInventory.get_randomizer_profile()
                         local randomizer_weapon = slot_name == "slot_primary" and mod.randomizer_data.weapons.melee.item or mod.randomizer_data.weapons.ranged.item
 
-                        if profile_preset.id == randomizer_profile.id and (slot_name == "slot_primary" or slot_name == "slot_secondary") then
+                        if slot_name == "slot_primary" or slot_name == "slot_secondary" then
                             local is_slot_randomizer_valid = item.__master_item.weapon_template == randomizer_weapon.weapon_template
 
                             if not is_slot_randomizer_valid then
+                                --mod:echo("invalid")
                                 only_show_slot_as_invalid[slot_name] = true
 						        invalid_slots[slot_name] = true
+                                invalid_slot_data[slot_name] = {
+                                    equipped = item.__master_item,
+                                    expected = randomizer_weapon,
+                                }
                             end
                         end
                     end
@@ -113,133 +118,97 @@ local _validate_loadout_modified = function (self, loadout, profile_preset, read
 		::label_1_0::
 	end
 
-	for removed_slot_name, _ in pairs(invalid_slots) do
-		if not only_show_slot_as_invalid[removed_slot_name] then
-			local starting_item = self._starting_profile_equipped_items and self._starting_profile_equipped_items[removed_slot_name]
-			local valid_stored_item = self._valid_profile_equipped_items and self._valid_profile_equipped_items[removed_slot_name]
-
-			starting_item = starting_item and self:_get_inventory_item_by_id(starting_item.gear_id)
-			valid_stored_item = valid_stored_item and self:_get_inventory_item_by_id(valid_stored_item.gear_id)
-
-			local fallback_item = MasterItems.find_fallback_item(removed_slot_name)
-			local starting_item_valid = starting_item and (starting_item.always_owned or fallback_item and fallback_item.name ~= starting_item.name)
-			local valid_stored_item_valid = valid_stored_item and (valid_stored_item.always_owned or fallback_item and fallback_item.name ~= valid_stored_item.name)
-
-			if not read_only then
-				if starting_item_valid then
-					self:_equip_slot_item(removed_slot_name, starting_item, true)
-				elseif valid_stored_item_valid then
-					self:_equip_slot_item(removed_slot_name, valid_stored_item, true)
-				end
-			end
-
-			if starting_item_valid or valid_stored_item_valid then
-				invalid_slots[removed_slot_name] = nil
-				modified_slots[removed_slot_name] = true
-			elseif fallback_item then
-				if not read_only then
-					self:_equip_slot_item(removed_slot_name, fallback_item, true)
-				end
-
-				if fallback_item.always_owned then
-					invalid_slots[removed_slot_name] = nil
-					modified_slots[removed_slot_name] = true
-				end
-			else
-				if ALLOWED_EMPTY_SLOTS[removed_slot_name] then
-					invalid_slots[removed_slot_name] = nil
-					modified_slots[removed_slot_name] = nil
-				end
-
-				if not read_only then
-					self:_equip_slot_item(removed_slot_name, nil, true)
-				end
-			end
-		end
-	end
-
 	if not read_only then
 		self._invalid_slots = invalid_slots
 		self._modified_slots = modified_slots
 		self._duplicated_slots = duplicated_slots
 	end
 
-	return invalid_slots, modified_slots, duplicated_slots
+	return invalid_slots, modified_slots, duplicated_slots, invalid_slot_data
 end
 
 mod:hook_safe(CLASS.InventoryBackgroundView, "_update_missing_warning_marker", function (self)
-	local presets = ProfileUtils.get_profile_presets()
-	local active_profile_preset_id = ProfileUtils.get_active_profile_preset_id()
+    if mod.randomizer_data then
 
-	if not presets or #presets == 0 or not active_profile_preset_id then
-		local loadout = self._current_profile_equipped_items
-		local invalid_slots, modified_slots, duplicated_slots = self:_validate_loadout(loadout, true)
+        local player = self._preview_player
+        local profile = player:profile()
+        local active_talent_version = TalentLayoutParser.talents_version(profile)
+        local preset = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-		self._invalid_slots = table.merge(table.merge({}, invalid_slots), duplicated_slots)
-		self._modified_slots = modified_slots
+        if preset.id == ProfileUtils.get_active_profile_preset_id() then
+            local loadout = preset and preset.loadout
+            local active_preset = preset.id == ProfileUtils.get_active_profile_preset_id()
+            --mod:echo("rando: " .. preset.id .. " == " .. self._profile_presets_element._active_profile_preset_id)
+            local is_read_only = not active_preset
 
-		local player = self._preview_player
-		local profile = player:profile()
+            local invalid_slots, modified_slots, duplicated_slots, invalid_slot_data = _validate_loadout_modified(self, loadout, preset, is_read_only)
+            local show_warning = not table.is_empty(invalid_slots) or not table.is_empty(duplicated_slots)
+            local show_modified = not table.is_empty(modified_slots)
+            local invalid_talents = false
+            local modified_talents = false
 
-		self._invalid_talents = self._current_profile_equipped_talents and not TalentLayoutParser.is_talent_selection_valid(profile, "talent_layout_file_path", self._current_profile_equipped_talents) or false
+            local preset_talents_version = preset.talents_version
 
-		if self._profile_presets_element then
-			local show_warning = not table.is_empty(self._invalid_slots) or not table.is_empty(self._duplicated_slots) or self._invalid_talents
-			local show_modified = not table.is_empty(self._modified_slots) or self._modified_talents
+            if not preset_talents_version or not TalentLayoutParser.is_same_version(active_talent_version, preset_talents_version) then
+                --show_modified = true
+                --modified_talents = true
+            end
 
-			self._profile_presets_element:set_current_profile_loadout_status(show_warning, show_modified)
-		end
+            if not TalentLayoutParser.is_talent_selection_valid(profile, "talent_layout_file_path", preset.talents) then
+                --invalid_talents = true
+                --show_warning = true
+            end
+
+            self._profile_presets_element:show_profile_preset_missing_items_warning(show_warning, show_modified)
+
+            if active_preset then
+                for _, slot in pairs(invalid_slot_data) do
+                    local equipped_display_name = Localize(slot.equipped.weapon_pattern_display_name.loc_id) .. " " .. Localize(slot.equipped.weapon_mark_display_name.loc_id) .. " " .. Localize(slot.equipped.weapon_family_display_name.loc_id)
+                    local expected_display_name = Localize(slot.expected.weapon_pattern_display_name.loc_id) .. " " .. Localize(slot.expected.weapon_mark_display_name.loc_id) .. " " .. Localize(slot.expected.weapon_family_display_name.loc_id)
+                    Managers.event:trigger("event_add_notification_message", "alert", {
+                        text = "Loadout Randomizer:\nEquipped " .. equipped_display_name .. "\nExpected " .. expected_display_name .. ".",
+                    })
+                end
+                --self._invalid_slots = table.merge(table.merge({}, invalid_slots), duplicated_slots)
+                --self._modified_slots = modified_slots
+                --self._invalid_talents = invalid_talents
+                --self._modified_talents = modified_talents
+                self._profile_presets_element:set_current_profile_loadout_status(show_warning, show_modified)
+            end
+        end
+    --self:_update_valid_items_list()
+    end
+end)
+
+mod:hook_safe(CLASS.InventoryBackgroundView, "_save_current_talents_to_profile_preset", function (self)
+	if not self._is_own_player or self._is_readonly then
+		return
 	end
 
-	if presets then
+	local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
+
+	if randomizer_profile.id == self._profile_presets_element._active_profile_preset_id  then
 		local player = self._preview_player
 		local profile = player:profile()
-		local active_talent_version = TalentLayoutParser.talents_version(profile)
+		local all_talents = {}
+		local active_talents_version = TalentLayoutParser.talents_version(profile)
 
-		for i = 1, #presets do
-			local preset = presets[i]
-			local loadout = preset and preset.loadout
-
-			if loadout then
-				local active_preset = preset.id == active_profile_preset_id
-				local is_read_only = not active_preset
-				local invalid_slots, modified_slots, duplicated_slots = _validate_loadout_modified(self, loadout, preset, is_read_only)
-				local show_warning = not table.is_empty(invalid_slots) or not table.is_empty(duplicated_slots)
-				local show_modified = not table.is_empty(modified_slots)
-				local invalid_talents = false
-				local modified_talents = false
-				local preset_talents_version = preset.talents_version
-
-				if not preset_talents_version or not TalentLayoutParser.is_same_version(active_talent_version, preset_talents_version) then
-					show_modified = true
-					modified_talents = true
-				end
-
-				if not TalentLayoutParser.is_talent_selection_valid(profile, "talent_layout_file_path", preset.talents) then
-					invalid_talents = true
-					show_warning = true
-				end
-
-				self._profile_presets_element:show_profile_preset_missing_items_warning(show_warning, show_modified, preset.id)
-
-				if active_preset then
-					self._invalid_slots = table.merge(table.merge({}, invalid_slots), duplicated_slots)
-					self._modified_slots = modified_slots
-					self._invalid_talents = invalid_talents
-					self._modified_talents = modified_talents
-
-					self._profile_presets_element:set_current_profile_loadout_status(show_warning, show_modified)
-				end
-			end
+		if self._current_profile_equipped_talents then
+			TalentLayoutParser.filter_layout_talents(profile, "talent_layout_file_path", self._current_profile_equipped_talents, all_talents)
 		end
+
+		if self._current_profile_equipped_specialization_talents then
+			TalentLayoutParser.filter_layout_talents(profile, "specialization_talent_layout_file_path", self._current_profile_equipped_specialization_talents, all_talents)
+		end
+
+		LoadoutRandomizerProfileUtils.save_talent_nodes(all_talents, active_talents_version)
 	end
 end)
 
 mod:hook_safe(CLASS.InventoryBackgroundView, "event_switch_mark", function (self, gear_id, mark_id, item)
-	local active_profile_preset_id = ProfileUtils.get_active_profile_preset_id()
-    local randomizer_profile = LoadoutRandomizerInventory.get_randomizer_profile()
+    local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-    if active_profile_preset_id == randomizer_profile.id then
-        self:_update_missing_warning_marker()
+    if randomizer_profile.id == self._profile_presets_element._active_profile_preset_id then
+        --self:_update_missing_warning_marker()
     end
 end)

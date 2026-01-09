@@ -74,6 +74,9 @@ local localizations = {
     loc_talent_ability_unrolled = {
         en = "Ability Unrolled!",
     },
+    cosmetic_group_id = {
+        en = "Cosmetic Settings",
+    },
 }
 
 local UISettings = require("scripts/settings/ui/ui_settings")
@@ -82,6 +85,7 @@ local MasterItems = require("scripts/backend/master_items")
 local WeaponTemplates = require("scripts/settings/equipment/weapon_templates/weapon_templates")
 local Archetypes = require("scripts/settings/archetype/archetypes")
 local TalentBuilderViewSettings = require("scripts/ui/views/talent_builder_view/talent_builder_view_settings")
+local ItemSlotSettings = require("scripts/settings/item/item_slot_settings")
 local talent_category_settings = TalentBuilderViewSettings.settings_by_node_type
 
 local patterns = UISettings.weapon_patterns
@@ -160,6 +164,13 @@ for node_id, node in pairs(talent_category_settings) do
 
     localizations["talent_" .. node_id .. "_group_id"] = {}
     localizations["talent_" .. node_id .. "_group_id"][localization] = Localize(node.display_name)
-end 
+end
+
+for slot_name, slot in pairs(ItemSlotSettings) do
+    if slot.equipped_in_inventory then
+        localizations["sett_".. slot_name .. "_enabled_id"] = {}
+        localizations["sett_".. slot_name .. "_enabled_id"][localization] = Localize(slot.display_name)
+    end
+end
 
 return localizations
