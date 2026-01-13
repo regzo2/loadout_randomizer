@@ -44,19 +44,15 @@ local generate_lonewolf_randomization_dataset = function()
     local datas = {}
     datas.blitz = {}
     datas.keystones = {}
+    datas.keystone_count = {}
     datas.aura = {}
+    datas.aura_count = {}
     datas.talent_conflicts = 0
 
     gbl_d = datas
 
-    for i=0, 1000 do
+    for i=0, 100 do
         local data = LoadoutRandomizerGenerator.generate_random_loadout(
-            {
-                "ability",
-                "aura",
-                "keystone",
-                "tactical", --blitz
-            },
             "adamant"
         )
 
@@ -78,9 +74,11 @@ local generate_lonewolf_randomization_dataset = function()
             end
             for id, keystone in pairs(keystones) do
                 datas.keystones[id] = keystone
+                datas.keystone_count[id] = (datas.keystone_count[id] and datas.keystone_count[id] or 0) + 1
             end
             for id, keystone in pairs(aura) do
                 datas.aura[id] = keystone
+                datas.aura_count[id] = (datas.aura_count[id] and datas.aura_count[id] or 0) + 1
             end
         end
     end

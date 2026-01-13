@@ -38,8 +38,14 @@ local localizations = {
     talent_group_id = {
         en = "Talent Settings",
     },
+    sett_talent_tree_select_fill_nodes_id = {
+        en = "Path Between Talent Tree Nodes",
+    },
+    sett_talent_tree_select_enabled_id = {
+        en = "Automatically Select Talent Tree Nodes",
+    },
     archetype_generic_group_id = {
-        en = "Operative Modifiers",
+        en = "      Operative Modifiers",
     },
     talent_weight_group_id = {
         en = "Talent Weights",
@@ -94,7 +100,7 @@ local localization = Managers.localization and Managers.localization:language()
 
 for pattern_name, pattern in pairs(patterns) do
     localizations["pattern_".. pattern_name .. "_group_id"] = {}
-    localizations["pattern_".. pattern_name .. "_group_id"][localization] = Localize(pattern.display_name)
+    localizations["pattern_".. pattern_name .. "_group_id"][localization] = "       " .. Localize(pattern.display_name)
     for _, mark in pairs(pattern.marks) do
         if WeaponTemplates[mark.name] then
             local loc = Localize(string.format("loc_weapon_pattern_%s", mark.name)) .. " " .. Localize(string.format("loc_weapon_mark_%s", mark.name)) .. " " .. Localize(string.format("loc_weapon_family_%s", mark.name))
@@ -135,7 +141,7 @@ for _, archetype in pairs(Archetypes) do
 
     for category_id, category in pairs(categories) do
         localizations["archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id"] = {}
-        localizations["archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id"][localization] = Localize(talent_category_settings[category_id].display_name)
+        localizations["archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id"][localization] = "      " .. Localize(talent_category_settings[category_id].display_name)
         for talent_id, talent in pairs(category) do
             localizations["talent_".. talent_id .. "_weight_id"] = {}
             localizations["talent_".. talent_id .. "_weight_id"][localization] = Localize(talent.display_name)
@@ -163,13 +169,13 @@ for node_id, node in pairs(talent_category_settings) do
     localizations["sett_talent_".. node_id .. "_max_group_rolls_id"][localization] = localizations.loc_talent_max_group_rolls_id[localization]
 
     localizations["talent_" .. node_id .. "_group_id"] = {}
-    localizations["talent_" .. node_id .. "_group_id"][localization] = Localize(node.display_name)
+    localizations["talent_" .. node_id .. "_group_id"][localization] = "        " .. Localize(node.display_name)
 end
 
 for slot_name, slot in pairs(ItemSlotSettings) do
     if slot.equipped_in_inventory then
         localizations["sett_".. slot_name .. "_enabled_id"] = {}
-        localizations["sett_".. slot_name .. "_enabled_id"][localization] = Localize(slot.display_name)
+        localizations["sett_".. slot_name .. "_enabled_id"][localization] = "       " .. Localize(slot.display_name)
     end
 end
 

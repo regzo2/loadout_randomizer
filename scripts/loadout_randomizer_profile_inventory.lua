@@ -209,31 +209,27 @@ local fill_if_empty_slots = {
     ["slot_secondary"] = true,
 }
 
-LoadoutRandomizerInventory.apply_inventory_loadout = function(data, profile_preset, character_id)
+LoadoutRandomizerInventory.apply_inventory_loadout = function(data, profile_preset, character_id, inventory_items)
     local profile = data.profile
-    Managers.data_service.gear:fetch_inventory(character_id):next(function (inventory_items)
 
-        set_nearest_inventory_item(profile, inventory_items, profile_preset, "slot_primary", data.weapons.melee.item)
-        set_nearest_inventory_item(profile, inventory_items, profile_preset, "slot_secondary", data.weapons.ranged.item)
+    set_nearest_inventory_item(profile, inventory_items, profile_preset, "slot_primary", data.weapons.melee.item)
+    set_nearest_inventory_item(profile, inventory_items, profile_preset, "slot_secondary", data.weapons.ranged.item)
 
-        local available_slots = {}
+    local available_slots = {}
 
-        for slot_name, slot in pairs(ItemSlotSettings) do
-            --mod:echo(slot_name)
-            if slot.equipped_in_inventory and (mod:get("sett_" .. slot_name .. "_enabled_id") == true or fill_if_empty_slots[slot_name]) then
-                local slot_setting = {
-                    slot_name = slot_name,
-                    equip_if_empty = fill_if_empty_slots[slot_name],
-                }
-                --mod:echo(slot_name .. " created")
-                table.insert(available_slots, slot_setting)
-            end
+    for slot_name, slot in pairs(ItemSlotSettings) do
+        --mod:echo(slot_name)
+        if slot.equipped_in_inventory and (mod:get("sett_" .. slot_name .. "_enabled_id") == true or fill_if_empty_slots[slot_name]) then
+            local slot_setting = {
+                slot_name = slot_name,
+                equip_if_empty = fill_if_empty_slots[slot_name],
+            }
+            --mod:echo(slot_name .. " created")
+            table.insert(available_slots, slot_setting)
         end
+    end
 
-        apply_random_items_by_slot_to_preset(profile, available_slots, profile_preset, inventory_items)
-
-        LoadoutRandomizerProfileUtils.save_randomizer_profile(profile_preset, character_id)
-	end)
+    apply_random_items_by_slot_to_preset(profile, available_slots, profile_preset, inventory_items)
 end
 
 

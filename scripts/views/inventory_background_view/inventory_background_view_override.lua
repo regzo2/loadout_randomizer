@@ -150,13 +150,15 @@ mod:hook_safe(CLASS.InventoryBackgroundView, "_update_missing_warning_marker", f
             local preset_talents_version = preset.talents_version
 
             if not preset_talents_version or not TalentLayoutParser.is_same_version(active_talent_version, preset_talents_version) then
-                --show_modified = true
-                --modified_talents = true
+                mod:echo("not version")
+                show_modified = true
+                modified_talents = true
             end
 
             if not TalentLayoutParser.is_talent_selection_valid(profile, "talent_layout_file_path", preset.talents) then
-                --invalid_talents = true
-                --show_warning = true
+                mod:echo("invalid")
+                invalid_talents = true
+                show_warning = true
             end
 
             self._profile_presets_element:show_profile_preset_missing_items_warning(show_warning, show_modified)
@@ -187,7 +189,7 @@ mod:hook_safe(CLASS.InventoryBackgroundView, "_save_current_talents_to_profile_p
 
 	local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-	if randomizer_profile.id == self._profile_presets_element._active_profile_preset_id  then
+	if randomizer_profile.id == ProfileUtils.get_active_profile_preset_id() then
 		local player = self._preview_player
 		local profile = player:profile()
 		local all_talents = {}
@@ -201,7 +203,7 @@ mod:hook_safe(CLASS.InventoryBackgroundView, "_save_current_talents_to_profile_p
 			TalentLayoutParser.filter_layout_talents(profile, "specialization_talent_layout_file_path", self._current_profile_equipped_specialization_talents, all_talents)
 		end
 
-		LoadoutRandomizerProfileUtils.save_talent_nodes(all_talents, active_talents_version)
+		LoadoutRandomizerProfileUtils.save_talent_nodes(nil, all_talents, active_talents_version)
 	end
 end)
 

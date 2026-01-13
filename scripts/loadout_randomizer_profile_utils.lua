@@ -92,9 +92,9 @@ LoadoutRandomizerProfileUtils.delete_randomizer_profile = function()
     LoadoutRandomizerProfileUtils.save_randomizer_profile(nil, character_id)
 end
 
-LoadoutRandomizerProfileUtils.save_talent_nodes = function(talent_nodes, talents_version)
+LoadoutRandomizerProfileUtils.save_talent_nodes = function(randomizer_profile, talent_nodes, talents_version)
 
-	local profile_preset = LoadoutRandomizerProfileUtils.get_randomizer_profile()
+	local profile_preset = randomizer_profile or LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
 	if not profile_preset then
 		return

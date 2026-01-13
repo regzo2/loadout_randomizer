@@ -11,6 +11,32 @@ local talent_category_settings = TalentBuilderViewSettings.settings_by_node_type
 
 local LoadoutRandomizerGenerator = {}
 
+local function get_node_depth_graph(node_map, target_widget_name)
+
+    if not node_map.start_node then return -1 end
+
+    local queue = {{node = node_map.start_node, depth = 1}}
+    local visited = {}
+
+    while #queue > 0 do
+        local current = table.remove(queue, 1)
+        
+        if current.node.widget_name == target_widget_name then
+            return current.depth
+        end
+
+        if not visited[current.node.widget_name] then
+            visited[current.node.widget_name] = true
+            for _, child_name in ipairs(current.node.children or {}) do
+                if node_map.nodes[child_name] then
+                    table.insert(queue, {node = node_map.nodes[child_name], depth = current.depth + 1})
+                end
+            end
+        end
+    end
+    return -1
+end
+
 local map_talent_tree_to_data = function(archetype, randomizer_data)
 	local all_talent_data = archetype.talents
 	local talent_tree_path = string.format("scripts/ui/views/talent_builder_view/layouts/%s_tree", archetype.name)
@@ -22,6 +48,17 @@ local map_talent_tree_to_data = function(archetype, randomizer_data)
 	randomizer_data.talents = {}
 	local talents = randomizer_data.talents
 
+	local node_map = {}
+		  node_map.nodes = {}
+		  node_map.start_node = nil
+
+    for _, node in ipairs(tree.nodes) do
+        node_map.nodes[node.widget_name] = node
+        if node.type == "start" then 
+			node_map.start_node = node 
+		end
+    end
+
 	for key, node in pairs(tree.nodes) do
 		if node.type ~= "start" and all_talent_data[node.talent] then
 			if not talents[node.type] then
@@ -32,6 +69,8 @@ local map_talent_tree_to_data = function(archetype, randomizer_data)
 			talents[node.type][node.talent].display_name = all_talent_data[node.talent].display_name
 			talents[node.type][node.talent].icon = node.icon
 			talents[node.type][node.talent].requirements = node.requirements
+			talents[node.type][node.talent].node_id = node.widget_name
+			talents[node.type][node.talent].node_depth = get_node_depth_graph(node_map, node.widget_name)
 		end
 	end
 end
@@ -162,52 +201,48 @@ local random_talent_from_set = function(talent_set)
 end
 
 local get_filtered_talent_set = function(archetype, talent_set)
-	local talents = talent_set
-	local talents_by_ex_group = {}
+    local talents_by_ex_group = {}
+    if not talent_set then return talents_by_ex_group end
 
-	if not talents then return talents_by_ex_group end
+    local index = 1
+    for key, talent_node in pairs(talent_set) do
+        local group = talent_node.requirements and talent_node.requirements.exclusive_group 
+                      or ("unique_" .. key .. "_" .. index)
+        index = index + 1
 
-	local index = 1
-	for key, keystone in pairs(talents) do
-		local group = keystone.requirements.exclusive_group or ("unique_" .. index)
-		index = index + 1
+        if not talents_by_ex_group[group] then
+            talents_by_ex_group[group] = {}
+        end
+        
+        talents_by_ex_group[group][key] = talent_node
+    end
 
-		if talents_by_ex_group[group] == nil then
-			talents_by_ex_group[group] = {}
-		end
-		talents_by_ex_group[group][key] = keystone
-
-		if keystone.requirements.incompatible_talent then
-			local incompat_key = keystone.requirements.incompatible_talent
-			local excluded_talent = talents[incompat_key]
-			talents_by_ex_group[group][incompat_key] = excluded_talent
-		end
-	end
-
-	return talents_by_ex_group
+    return talents_by_ex_group
 end
 
-local get_random_talents_from_sets = function(talent_sets, talent_type)
-	local talents = {}
-	local chance_to_unroll = mod:get("sett_talent_" .. talent_type .. "_unroll_chance_id")
-	local max_talents = mod:get("sett_talent_" .. talent_type .. "_max_group_rolls_id")
-	local index = 0
-	for key, set in pairs(talent_sets) do
-		index = index + 1
+local random_talent_from_set = function(talent_set)
+    local weighted_talent_set = {}
+    local weighted_count = 0
 
-		if index > max_talents then break end
+    for talent_id, talent in pairs(talent_set) do
+        local talent_weight = mod:get("talent_" .. talent_id .. "_weight_id") or 1
+        if talent_weight > 0 then
+            weighted_count = weighted_count + talent_weight
+            table.insert(weighted_talent_set, {id = talent_id, weight = talent_weight})
+        end
+    end
 
-		local r_key = random_talent_from_set(set)
-		local talent = set[r_key]
+    if weighted_count <= 0 then return nil end
 
-		if chance_to_unroll then
-			talent.unrolled = math.random() <= chance_to_unroll
-		end
-
-		talents[r_key] = talent
-	end
-	--mod:dump(talents, "" , 10)
-	return talents
+    local target = math.random() * weighted_count
+    local current = 0
+    for _, entry in ipairs(weighted_talent_set) do
+        current = current + entry.weight
+        if target <= current then
+            return entry.id
+        end
+    end
+    return weighted_talent_set[#weighted_talent_set].id
 end
 
 local get_talents_mask = function()
@@ -255,78 +290,105 @@ local get_best_matching_profile = function(archetype_name)
 	return best_matching_profile
 end
 
-LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)	
-	local data = {}
-    data.class = {}
-    local class_data = data.class
+local get_group_weight_sum = function(talent_id, all_categories)
+    for _, category in pairs(all_categories) do
+        if category[talent_id] then
+            local sum = 0
+            for id, _ in pairs(category) do
+                sum = sum + (mod:get("talent_" .. id .. "_weight_id") or 1)
+            end
+            return sum
+        end
+    end
+    return 1
+end
 
-	local talents_mask = get_talents_mask()
+LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)   
+    local data = { class = {}, talents = {}, weapons = {} }
+    
+    -- 1. Setup Archetype Data
+    for name, arch in pairs(Archetypes) do
+        data.class[name] = {}
+        get_item_data(arch, data.class[name])
+        map_talent_tree_to_data(arch, data.class[name])
+    end
 
-	for name, archetype in pairs(Archetypes) do
-		class_data[name] = {}
+    data.archetype = archetype_name and Archetypes[archetype_name] or Archetypes[random_element(Archetypes)]
+    local arch_id = data.archetype.name
+    local all_arch_talents = data.class[arch_id].talents
+    local forbidden_ids = {}
 
-		get_item_data(archetype, class_data[name])
-		map_talent_tree_to_data(archetype, class_data[name])
-	end
+    local conflict_map = {}
+    for cat_name, category_set in pairs(all_arch_talents) do
+        for t_id, t_node in pairs(category_set) do
+            local enemy_id = t_node.requirements and t_node.requirements.incompatible_talent
+            if enemy_id then
+                conflict_map[t_id] = enemy_id
+                conflict_map[enemy_id] = t_id
+            end
+        end
+    end
 
-	data.archetype = archetype_name and Archetypes[archetype_name] or Archetypes[random_element(Archetypes)]
-	data.profile = get_best_matching_profile(data.archetype.name)
-	local arch_id = data.archetype.name
+    local talents_mask = get_talents_mask()
 
-	data.weapons = {}
+	for _, talent_type in ipairs(talents_mask) do
+		local category_data = all_arch_talents[talent_type]
+		if category_data then
+			local filtered_groups = get_filtered_talent_set(data.archetype, category_data)
+			data.talents[talent_type] = data.talents[talent_type] or {}
 
-	data.weapons.ranged = get_random_weighted_weapon(data.archetype, class_data[arch_id].weapons.ranged)
-	data.weapons.melee = get_random_weighted_weapon(data.archetype, class_data[arch_id].weapons.melee)
+			for group_id, group_set in pairs(filtered_groups) do
+				local rollable_candidates = {}
+				local forced_winner = nil
+				
+				for t_id, t_node in pairs(group_set) do
+					if not forbidden_ids[t_id] then
+						local enemy_id = conflict_map[t_id]
+						
+						if enemy_id and not forbidden_ids[enemy_id] then
+							local weight_a = mod:get("talent_" .. t_id .. "_weight_id") or 1
+							local weight_b = mod:get("talent_" .. enemy_id .. "_weight_id") or 1
+							
+							if math.random() * (weight_a + weight_b) < weight_a then
+								rollable_candidates[t_id] = t_node
+								forbidden_ids[enemy_id] = true
+								forced_winner = t_id
+							else
+								forbidden_ids[t_id] = true
+							end
+						else
+							rollable_candidates[t_id] = t_node
+						end
+					end
+				end
 
-	local selected_talents = {}
+				local selected_key = nil
+				if forced_winner and rollable_candidates[forced_winner] then
+					selected_key = forced_winner
+				else
+					selected_key = random_talent_from_set(rollable_candidates)
+				end
 
-	if talents_mask then
-
-		data.talents = {}
-
-		local roll_talents = function(talent_type, index)
-			local roll_stoneless = talent_type == "keystone"
-			local talent_data = class_data[arch_id].talents[talent_type]
-
-			local filtered_set = get_filtered_talent_set(data.archetype, talent_data)
-			if not filtered_set then return end
-			local talents = get_random_talents_from_sets(filtered_set, talent_type)
-			for talent_id, talent in pairs(talents) do
-				selected_talents[talent_id] = talent
-				selected_talents[talent_id].type = talent_type
-			end
-
-			if talents ~= nil then
-				data.talents[talent_type] = talents
-			else
-				table.remove(talents_mask, index)
-				return
-			end
-		end
-
-		-- get talents
-		for index, talent_type in ipairs(table.clone(talents_mask)) do
-			roll_talents(talent_type, index)
-		end
-
-		::restart::
-
-		for index, talent_type in ipairs(talents_mask) do
-			for talent_id, talent in pairs(data.talents[talent_type]) do
-				local conflicting_talent = talent.requirements and talent.requirements.incompatible_talent and selected_talents[talent.requirements.incompatible_talent]
-				if conflicting_talent then
-					selected_talents[talent.requirements.incompatible_talent] = nil
-					roll_talents(conflicting_talent.type)
-					goto restart
+				if selected_key then
+					data.talents[talent_type][selected_key] = group_set[selected_key]
+					
+					local enemy = conflict_map[selected_key]
+					if enemy then
+						forbidden_ids[enemy] = true
+					end
 				end
 			end
 		end
 	end
 
-	LoadoutRandomizerProfile.apply_randomizer_loadout_to_profile_preset(data)
+    data.weapons.ranged = get_random_weighted_weapon(data.archetype, data.class[arch_id].weapons.ranged)
+    data.weapons.melee = get_random_weighted_weapon(data.archetype, data.class[arch_id].weapons.melee)
+	data.profile = get_best_matching_profile(arch_id)
 
-	mod.randomizer_data = data
-
+	if data.profile then
+    	LoadoutRandomizerProfile.apply_randomizer_loadout_to_profile_preset(data)
+	end
+    
     return data, talents_mask
 end
 

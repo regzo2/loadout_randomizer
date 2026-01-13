@@ -17,6 +17,20 @@ local map_talent_tree_to_data = function(archetype, randomizer_data)
 	if not exists or not tree then return end
 
 	local talents = {}
+    local conflict_counts = {}
+    local conflict_groups = {}
+
+    -- first pass, map conflicts
+    for key, node in pairs(tree.nodes) do
+		if node.type ~= "start" and all_talent_data[node.talent] then
+            local incompat_key = node.requirements and node.requirements.incompatible_talent
+            local conflict_group = node.requirements and node.requirements.exclusive_group or ("unique_" .. key .. "_" .. node.talent)
+            if incompat_key and not conflict_groups[conflict_group] then
+                conflict_counts[incompat_key] = conflict_counts[incompat_key] and conflict_counts[incompat_key] + 1 or 1
+                conflict_groups[conflict_group] = true
+            end
+		end
+	end
 
 	for key, node in pairs(tree.nodes) do
 		if node.type ~= "start" and all_talent_data[node.talent] then
@@ -25,9 +39,7 @@ local map_talent_tree_to_data = function(archetype, randomizer_data)
 			end
 
 			talents[node.type][node.talent] = {}
-			talents[node.type][node.talent].display_name = all_talent_data[node.talent].display_name
-			talents[node.type][node.talent].icon = node.icon
-			talents[node.type][node.talent].requirements = node.requirements
+            talents[node.type][node.talent].conflict_counts = conflict_counts[node.talent] or nil
 		end
 	end
 
@@ -96,13 +108,30 @@ local talent_settings_subwidgets = function()
     end 
 
     table.sort(widget, function(a, b)
+        if not a.localized_identity then
+            return true
+        elseif not b.localized_identity then
+            return false
+        end
         if a.localized_identity == b.localized_identity then
             return a.category_id < b.category_id
         end
         return a.localized_identity < b.localized_identity
     end)
 
-    return widget
+    return {
+        {
+            setting_id      = "sett_talent_tree_select_enabled_id",
+            type            = "checkbox",
+            default_value   = true,
+        },
+        {
+            setting_id      = "sett_talent_tree_select_fill_nodes_id",
+            type            = "checkbox",
+            default_value   = true,
+        },
+        table.unpack(widget),
+    }
 end
 
 local talent_weight_subwidgets = function()
@@ -131,10 +160,14 @@ local talent_weight_subwidgets = function()
 
                 if not existing_talents[talent_id] then
 
+                    if talent_id == "adamant_disable_companion" then
+                        mod:echo(talent.conflict_counts)
+                    end
+
                     local talent_subwidget = {
                         setting_id    = "talent_".. talent_id .. "_weight_id",
                         type            = "numeric",
-                        default_value   = 1,
+                        default_value   = talent.conflict_counts and (1 + talent.conflict_counts ^ 0.25) or 1,
                         range           = weight_range,
                         decimals_number = 2
                     }
@@ -255,7 +288,7 @@ return {
                 keybind_type    = "function_call",
                 function_name   = "open_view",
             },
-           --[[ 
+           
             {
                 setting_id      = "randomizer_tests",
                 type            = "keybind",
@@ -264,7 +297,7 @@ return {
                 keybind_type    = "function_call",
                 function_name   = "generate_randomization_dataset",
             },
-            ]]
+            
             {
                 setting_id    = "weapon_group_id",
                 type          = "group",
@@ -291,14 +324,14 @@ return {
                 },
             },
             {
-                setting_id    = "cosmetic_group_id",
-                type          = "group",
-                sub_widgets   = randomize_cosmetics_subwidgets(),
-            },
-            {
                 setting_id    = "talent_group_id",
                 type          = "group",
                 sub_widgets   = talent_settings_subwidgets(),
+            },
+            {
+                setting_id    = "cosmetic_group_id",
+                type          = "group",
+                sub_widgets   = randomize_cosmetics_subwidgets(),
             },
             {
                 setting_id    = "weapon_weight_group_id",

@@ -14,8 +14,12 @@ LoadoutRandomizerProfile.apply_randomizer_loadout_to_profile_preset = function(d
     local character_id = profile.character_id
     local profile_preset = LoadoutRandomizerProfileUtils.get_randomizer_profile(profile)
 
-    LoadoutRandomizerInventory.apply_inventory_loadout(data, profile_preset, character_id)
-    LoadoutRandomizerTalents.apply_talents_loadout(data, profile_preset, character_id)
+    Managers.data_service.gear:fetch_inventory(character_id):next(function (inventory_items)
+        LoadoutRandomizerInventory.apply_inventory_loadout(data, profile_preset, character_id, inventory_items)
+        LoadoutRandomizerTalents.apply_talents_loadout(data, profile_preset, character_id)
+
+        LoadoutRandomizerProfileUtils.save_randomizer_profile(profile_preset, character_id)
+    end)
 end
 
 return LoadoutRandomizerProfile

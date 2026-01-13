@@ -69,9 +69,7 @@ mod:register_view({
 function mod.open_view()
   local ui_manager = Managers.ui
 
-  if not ui_manager:has_active_view()
-      and not ui_manager:chat_using_input()
-      and not ui_manager:view_instance(view_name)
+  if not ui_manager:view_instance(view_name)
   then
 
     ui_manager:open_view(view_name)

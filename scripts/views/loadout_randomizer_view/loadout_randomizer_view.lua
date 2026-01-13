@@ -177,18 +177,20 @@ LoadoutRandomizerView._setup_talent_widgets = function(self, talents, talent_mas
 	for i, value in ipairs(ordered_talents) do
 		local talent_category_id = value.key
 		local talent_category = value.value
-		for talent_id, talent in pairs(talent_category) do
-			local node_type = node_types[talent_category_id] or node_types.default
+		if talent_category then
+			for talent_id, talent in pairs(talent_category) do
+				local node_type = node_types[talent_category_id] or node_types.default
 
-			local widget_name = "talent_".. talent_category_id .."_node_" .. talent_id
-			local node_widget_definition = UIWidget.create_definition(node_type.node_definition, widget_name)
-			local node_scenegraph_definition = node_type.node_scenegraph_definition
-			local widget = self:_add_widget(widget_name, node_widget_definition, node_scenegraph_definition)
+				local widget_name = "talent_".. talent_category_id .."_node_" .. talent_id
+				local node_widget_definition = UIWidget.create_definition(node_type.node_definition, widget_name)
+				local node_scenegraph_definition = node_type.node_scenegraph_definition
+				local widget = self:_add_widget(widget_name, node_widget_definition, node_scenegraph_definition)
 
-			widget.content.talent = talent
-			widget.alpha_multiplier = 0
+				widget.content.talent = talent
+				widget.alpha_multiplier = 0
 
-			table.insert(widgets, widget)
+				table.insert(widgets, widget)
+			end
 		end
 	end
 
@@ -228,7 +230,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 		local player = Managers.player:local_player(local_player_id)
 		local archetype_name = player:archetype_name()
 
-		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout("broker")
+		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout(archetype_name)
 
 		local i = 0.6
 		local iter = 0.6
