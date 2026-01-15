@@ -621,7 +621,6 @@ local select_random_walk_talents_on_path = function(
 							table.insert(full_path, random_child)
 							table.insert(path, random_child)
 							points_spent = new_points_spent
-							mod:echo("new pts " .. points_spent)
 
 							mark_exclusive_branch_as_seen(random_child, seen_nodes, widget_lookup)
 
@@ -654,8 +653,6 @@ local create_talent_tree_path_complete = function(
 )
     local seen_nodes = {}
 
-	mod:echo("talent_tree: " .. points_spent)
-
 	local path, points_spent = select_anchor_talent_path_bfs(
 		talent_tree,
 		talent_tree_adjacency,
@@ -666,8 +663,6 @@ local create_talent_tree_path_complete = function(
 		widget_lookup,
 		points_spent
 	)
-
-	mod:echo("talent_tree: " .. points_spent)
 
 	path = select_random_walk_talents_on_path(
 		path,
