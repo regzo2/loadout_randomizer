@@ -68,25 +68,29 @@ local talent_settings_subwidgets = function()
             local talent_subwidgets = {
                 {
                     setting_id      = "sett_talent_".. node_id .."_enabled_id",
+                    title           = "loc_talent_enabled_id",
                     type            = "checkbox",
                     default_value   = default_enabled_talents[node_id] and true or false,
                 },
                 {
-                    setting_id    = "sett_talent_".. node_id .. "_max_group_rolls_id",
+                    setting_id      = "sett_talent_".. node_id .. "_max_group_rolls_id",
+                    title           = "loc_talent_max_group_rolls_id",
                     type            = "numeric",
                     default_value   = 3,
                     range           = { 1, 10 },
                     decimals_number = 0,
                 },
                 {
-                    setting_id    = "sett_talent_".. node_id .. "_unroll_chance_id",
+                    setting_id      = "sett_talent_".. node_id .. "_unroll_chance_id",
+                    title           = "loc_talent_unroll_chance_id",
                     type            = "numeric",
                     default_value   = 0,
                     range           = { 0, 1 },
                     decimals_number = 2
                 },
                 {
-                    setting_id    = "sett_talent_".. node_id .. "_weight_id",
+                    setting_id      = "sett_talent_".. node_id .. "_weight_id",
+                    title           = "loc_talent_group_weight_id",
                     type            = "numeric",
                     default_value   = default_talent_group_weight[node_id] or 1,
                     range           = weight_range,
@@ -95,6 +99,7 @@ local talent_settings_subwidgets = function()
                 --[[
                 {
                     setting_id    = "sett_talent_".. node_id .. "_freeroll_chance_id",
+                    title           = "loc_talent_freeroll_chance_id",
                     type            = "numeric",
                     default_value   = 0,
                     range           = { 0, 1 },

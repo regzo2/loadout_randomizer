@@ -65,6 +65,9 @@ local localizations = {
     loc_talent_enabled_id = {
         en = "Enabled",
     },
+    loc_talent_group_weight_id = {
+        en = "Group Weight",
+    },
     loc_talent_unroll_chance_id = {
         en = "Unroll Chance",
     },
@@ -153,21 +156,6 @@ for _, archetype in pairs(Archetypes) do
 end
 
 for node_id, node in pairs(talent_category_settings) do
-    localizations["sett_talent_".. node_id .."_enabled_id"] = {}
-    localizations["sett_talent_".. node_id .."_enabled_id"][localization] = localizations.loc_talent_enabled_id[localization]
-
-    localizations["sett_talent_".. node_id .. "_order_id"] = {}
-    localizations["sett_talent_".. node_id .. "_order_id"][localization] = localizations.loc_talent_order_id[localization]
-
-    localizations["sett_talent_".. node_id .. "_unroll_chance_id"] = {}
-    localizations["sett_talent_".. node_id .. "_unroll_chance_id"][localization] = localizations.loc_talent_unroll_chance_id[localization]
-
-    localizations["sett_talent_".. node_id .. "_freeroll_chance_id"] = {}
-    localizations["sett_talent_".. node_id .. "_freeroll_chance_id"][localization] = localizations.loc_talent_freeroll_chance_id[localization]
-
-    localizations["sett_talent_".. node_id .. "_max_group_rolls_id"] = {}
-    localizations["sett_talent_".. node_id .. "_max_group_rolls_id"][localization] = localizations.loc_talent_max_group_rolls_id[localization]
-
     localizations["talent_" .. node_id .. "_group_id"] = {}
     localizations["talent_" .. node_id .. "_group_id"][localization] = "        " .. Localize(node.display_name)
 end
