@@ -2,11 +2,21 @@ local mod = get_mod("loadout_randomizer")
 
 local weight_range = { 0, 10 }
 
-local default_enabled_talents = {}
+local default_enabled_talents = {
+    ["ability"] = true,
+    ["tactical"] = true,
+    ["aura"] = true,
+}
 
-default_enabled_talents["ability"] = true
-default_enabled_talents["tactical"] = true
-default_enabled_talents["aura"] = true
+local default_talent_group_weight = {
+    ["ability_modifier"] = 1.4,
+    ["keystone_modifier"] = 1.2,
+    ["tactical_modifier"] = 1,
+    ["aura_modifier"] = 1,
+    ["default"] = 0.9,
+    ["stat"] = 0.7,
+    ["broker_stimm"] = 3,
+}
 
 local map_talent_tree_to_data = function(archetype, randomizer_data)
 	local all_talent_data = archetype.talents
@@ -55,20 +65,11 @@ local talent_settings_subwidgets = function()
     for node_id, node in pairs(talent_category_settings) do
 
         if node_id ~= "start" then
-            local order = node.sort_order
-
             local talent_subwidgets = {
                 {
                     setting_id      = "sett_talent_".. node_id .."_enabled_id",
                     type            = "checkbox",
                     default_value   = default_enabled_talents[node_id] and true or false,
-                },
-                {
-                    setting_id    = "sett_talent_".. node_id .. "_order_id",
-                    type            = "numeric",
-                    default_value   = order or 10,
-                    range           = { 1, 10 },
-                    decimals_number = 0
                 },
                 {
                     setting_id    = "sett_talent_".. node_id .. "_max_group_rolls_id",
@@ -82,6 +83,13 @@ local talent_settings_subwidgets = function()
                     type            = "numeric",
                     default_value   = 0,
                     range           = { 0, 1 },
+                    decimals_number = 2
+                },
+                {
+                    setting_id    = "sett_talent_".. node_id .. "_weight_id",
+                    type            = "numeric",
+                    default_value   = default_talent_group_weight[node_id] or 1,
+                    range           = weight_range,
                     decimals_number = 2
                 },
                 --[[
