@@ -132,19 +132,7 @@ local talent_settings_subwidgets = function()
         return a.localized_identity < b.localized_identity
     end)
 
-    return {
-        {
-            setting_id      = "sett_talent_tree_select_enabled_id",
-            type            = "checkbox",
-            default_value   = true,
-        },
-        {
-            setting_id      = "sett_talent_tree_select_fill_nodes_id",
-            type            = "checkbox",
-            default_value   = true,
-        },
-        table.unpack(widget),
-    }
+    return widget
 end
 
 local talent_weight_subwidgets = function()
@@ -192,7 +180,7 @@ local talent_weight_subwidgets = function()
             end
 
             local talent_category_subwidget = {
-                setting_id          = "archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id",
+                setting_id          = "group_".. archetype.name .. "_talent_" .. category_id .. "_id",
                 type                = "group",
                 sub_widgets         = talent_subwidgets,
                 localized_identity  = Localize(talent_category_settings[category_id].display_name),
@@ -211,7 +199,7 @@ local talent_weight_subwidgets = function()
         end)
 
         local class_subwidget = {
-            setting_id          = "archetype_".. archetype.name .. "_group_id",
+            setting_id          = "group_".. archetype.name .. "_talent_weight_id",
             type                = "group",
             sub_widgets         = talent_group_subwidgets,
         }
@@ -327,6 +315,22 @@ return {
                     },
                     {
                         setting_id      = "sett_weapon_chance_id",
+                        type            = "checkbox",
+                        default_value   = true,
+                    },
+                },
+            },
+            {
+                setting_id    = "talent_tree_group_id",
+                type          = "group",
+                sub_widgets   = {
+                    {
+                        setting_id      = "sett_talent_layout_file_path_cost_randomization_id",
+                        type            = "checkbox",
+                        default_value   = false,
+                    },
+                    {
+                        setting_id      = "sett_specialization_talent_layout_file_path_cost_randomization_id",
                         type            = "checkbox",
                         default_value   = true,
                     },
