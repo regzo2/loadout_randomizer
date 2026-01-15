@@ -506,7 +506,7 @@ local select_anchor_talent_path_bfs = function(
             if not seen_nodes[node_id] and widget_lookup[node_id] then
                 table.insert(path, node_id)
                 seen_nodes[node_id] = true
-                points_spent = points_spent + widget_lookup[node_id].cost
+                points_spent = points_spent + widget_lookup[node_id].cost or 1
             end
         end
 
@@ -514,7 +514,7 @@ local select_anchor_talent_path_bfs = function(
             current_source = anchor_node_id
         end
     end
-	return path
+	return path, points_spent
 end
 
 local get_random_weighted_child_node = function(children, widget_lookup)
@@ -577,7 +577,6 @@ local select_random_walk_talents_on_path = function(
 	widget_lookup,
 	points_spent
 )
-	points_spent = #path
 	local locked_by_exclusive_group = {}
 	local total_point_cap = talent_tree.talent_points
 	local full_path = table.clone(path)
@@ -586,8 +585,11 @@ local select_random_walk_talents_on_path = function(
 
 	local iterations = 0
 	
-	while points_spent < total_point_cap and iterations < total_point_cap * 2 do
+	while iterations < total_point_cap * 2 and points_spent < total_point_cap do
 		iterations = iterations + 1
+		if iterations == total_point_cap * 2 then
+			mod:echo("okay nice")
+		end
 		local random_parent_node = get_random_weighted_child_node(full_path, widget_lookup)
 
 		local children = talent_tree_adjacency[random_parent_node]
@@ -607,13 +609,14 @@ local select_random_walk_talents_on_path = function(
 
 					if not seen_nodes[random_child] and not restricted_types and not is_group_invalid then
 						
-						local cost = widget_lookup[random_child].cost
+						local cost = widget_lookup[random_child].cost or 1
 						local new_points_spent = points_spent + cost
 						seen_nodes[random_child] = true
 						if new_points_spent <= total_point_cap then
 							table.insert(full_path, random_child)
 							table.insert(path, random_child)
 							points_spent = new_points_spent
+							mod:echo("new pts " .. points_spent)
 
 							mark_exclusive_branch_as_seen(random_child, seen_nodes, widget_lookup)
 
@@ -622,6 +625,9 @@ local select_random_walk_talents_on_path = function(
 							if enemy and not seen_nodes[enemy] then
 								seen_nodes[enemy] = true
 							end
+						else
+							-- we have reached the maximum we can spend
+							break
 						end
 					end
 				end
@@ -629,7 +635,7 @@ local select_random_walk_talents_on_path = function(
 		end
 	end
 
-	return path
+	return path, points_spent
 end
 
 local create_talent_tree_path_complete = function(
@@ -638,14 +644,14 @@ local create_talent_tree_path_complete = function(
 	root_node_id, 
 	anchor_node_order,
 	widget_lookup,
-	tree_conflict_map
+	tree_conflict_map,
+	points_spent
 )
     local seen_nodes = {}
-	local points_spent = 0
 
-	local path = {}
+	mod:echo("talent_tree: " .. points_spent)
 
-	path = select_anchor_talent_path_bfs(
+	local path, points_spent = select_anchor_talent_path_bfs(
 		talent_tree,
 		talent_tree_adjacency,
 		anchor_node_order, 
@@ -656,6 +662,7 @@ local create_talent_tree_path_complete = function(
 		points_spent
 	)
 
+	mod:echo("talent_tree: " .. points_spent)
 
 	path = select_random_walk_talents_on_path(
 		path,
@@ -700,7 +707,8 @@ end
 
 local select_random_talents_anchored = function(
     talent_tree,
-    anchor_nodes
+    anchor_nodes,
+	points_spent
 )
 
     local root_node = get_root_node(talent_tree)
@@ -716,14 +724,15 @@ local select_random_talents_anchored = function(
         root_node.widget_name,
         anchor_nodes,
 		widget_lookup,
-		tree_conflict_map
+		tree_conflict_map,
+		points_spent
     )
 end
 
-local build_talent_tree_selection = function(anchor_talents, data, talent_tree)
+local build_talent_tree_selection = function(anchor_talents, data, talent_tree, points_spent)
 
     local anchor_nodes = get_anchor_nodes_from_talents(anchor_talents)
-    local selected_talent_nodes = select_random_talents_anchored(talent_tree, anchor_nodes)
+    local selected_talent_nodes = select_random_talents_anchored(talent_tree, anchor_nodes, points_spent)
 
 	return selected_talent_nodes
 end
@@ -763,7 +772,11 @@ local get_talent_data = function(data, talent_tree_key)
 	local talent_tree = get_talent_tree(data.archetype, talent_tree_key)
 	local all_arch_talents = map_talent_tree_to_categories(archetype, talent_tree)
 	local anchor_talents = get_anchor_talents(all_arch_talents, data)
-	local selected_talent_tree = build_talent_tree_selection(anchor_talents, data, talent_tree)
+
+	local randomize_points = mod:get("sett_".. talent_tree_key .. "_cost_randomization_id")
+	local points_spent = randomize_points and math.random(0, talent_tree.talent_points) or 0
+	
+	local selected_talent_tree = build_talent_tree_selection(anchor_talents, data, talent_tree, points_spent)
 
 	return anchor_talents, selected_talent_tree
 end
