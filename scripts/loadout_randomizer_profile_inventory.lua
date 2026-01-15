@@ -285,8 +285,6 @@ end
 LoadoutRandomizerInventory.apply_loadout = function(data, profile_preset, character_id, inventory_items)
     _apply_inventory_loadout(data, profile_preset, inventory_items)
     _apply_talents_loadout(data, profile_preset)
-
-    gbl_data = data
 end
 
 

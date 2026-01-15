@@ -150,13 +150,11 @@ mod:hook_safe(CLASS.InventoryBackgroundView, "_update_missing_warning_marker", f
             local preset_talents_version = preset.talents_version
 
             if not preset_talents_version or not TalentLayoutParser.is_same_version(active_talent_version, preset_talents_version) then
-                mod:echo("not version")
                 show_modified = true
                 modified_talents = true
             end
 
             if not TalentLayoutParser.is_talent_selection_valid(profile, "talent_layout_file_path", preset.talents) then
-                mod:echo("invalid")
                 invalid_talents = true
                 show_warning = true
             end

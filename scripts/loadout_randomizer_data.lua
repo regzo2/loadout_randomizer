@@ -173,10 +173,6 @@ local talent_weight_subwidgets = function()
 
                 if not existing_talents[talent_id] then
 
-                    if talent_id == "adamant_disable_companion" then
-                        mod:echo(talent.conflict_counts)
-                    end
-
                     local talent_subwidget = {
                         setting_id    = "talent_".. talent_id .. "_weight_id",
                         type            = "numeric",

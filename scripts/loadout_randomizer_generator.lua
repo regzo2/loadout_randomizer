@@ -553,14 +553,12 @@ local mark_exclusive_branch_as_seen = function(base_child, seen_nodes, widget_lo
 	if exclusive_group then
 		for _, parent in ipairs(parents) do
 			if not seen_nodes[parent] then
-				mod:echo("marked parent")
 				seen_nodes[parent] = true
 			end
 
 			local parent_children = widget_lookup[parent].children
 			for _, child in ipairs(parent_children) do
 				if not seen_nodes[child] then
-					mod:echo("marked kid")
 					seen_nodes[child] = true
 				end
 			end
@@ -606,11 +604,6 @@ local select_random_walk_talents_on_path = function(
 											or widget_type == "aura"
 					local exclusive_group = widget.requirements and widget.requirements.exclusive_group
 					local is_group_invalid = exclusive_group and locked_by_exclusive_group[random_child] and (locked_by_exclusive_group[random_child] ~= exclusive_group) or false
-					if is_group_invalid then
-						mod:echo((widget.talent or "n/a") .. " group invalid: " .. (exclusive_group or " n/a ") .. " != " .. (locked_by_exclusive_group[random_child] or "n/a") .. (is_group_invalid and "true" or "false"))
-					end
-
-					gbl_eg = locked_by_exclusive_group
 
 					if not seen_nodes[random_child] and not restricted_types and not is_group_invalid then
 						
@@ -635,8 +628,6 @@ local select_random_walk_talents_on_path = function(
 			end
 		end
 	end
-
-	mod:echo("iter: " .. iterations)
 
 	return path
 end
@@ -697,8 +688,6 @@ end
 
 local get_widget_lookup_from_tree = function(talent_tree)
 	local widget_lookup = {}
-
-	gbl_t = talent_tree
 
 	for _, node in pairs(talent_tree.nodes) do
 		if node.widget_name then
@@ -764,15 +753,12 @@ end
 
 local get_talent_data = function(data, talent_tree_key)
 	local archetype = data.archetype
-	gbl_a = archetype
 	local talent_tree_path = archetype[talent_tree_key]
 
 
 	if not talent_tree_path then 
-		mod:echo("na")
 		return 
 	end
-	mod:echo("ya")
 
 	local talent_tree = get_talent_tree(data.archetype, talent_tree_key)
 	local all_arch_talents = map_talent_tree_to_categories(archetype, talent_tree)
