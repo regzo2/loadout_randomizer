@@ -296,7 +296,7 @@ return {
                 keybind_type    = "function_call",
                 function_name   = "open_view",
             },
-           
+           --[[
             {
                 setting_id      = "randomizer_tests",
                 type            = "keybind",
@@ -305,7 +305,7 @@ return {
                 keybind_type    = "function_call",
                 function_name   = "generate_randomization_dataset",
             },
-            
+            ]]
             {
                 setting_id    = "weapon_group_id",
                 type          = "group",
