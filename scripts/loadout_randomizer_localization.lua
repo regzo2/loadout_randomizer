@@ -86,6 +86,18 @@ local localizations = {
     cosmetic_group_id = {
         en = "Cosmetic Settings",
     },
+    talent_tree_group_id = {
+        en = "Talent Tree Settings",
+    },
+    loc_talent_tree_enabled = {
+        en = "Apply To Tree",
+    },
+    sett_talent_layout_file_path_cost_randomization_id = {
+        en = "Randomize Talent Tree Spent Points",
+    },
+    sett_specialization_talent_layout_file_path_cost_randomization_id = {
+        en = "Randomize Stimm Lab Spent Points",
+    },
 }
 
 local UISettings = require("scripts/settings/ui/ui_settings")
@@ -140,19 +152,26 @@ local map_talent_tree_to_data = function(archetype)
 end
 
 for _, archetype in pairs(Archetypes) do
+
+    localizations["group_".. archetype.name .. "_talent_tree_id"] = {}
+    localizations["group_".. archetype.name .. "_talent_tree_id"][localization] = "      " .. Localize(archetype.archetype_name) .. " " .. Localize("loc_talent_view_display_name")
+
+    localizations["group_".. archetype.name .. "_special_talent_tree_id"] = {}
+    localizations["group_".. archetype.name .. "_special_talent_tree_id"][localization] = "      " .. Localize(archetype.archetype_name) .. " " .. Localize("loc_broker_stimm_builder_view_display_name")
+
     local categories = map_talent_tree_to_data(archetype)
 
     for category_id, category in pairs(categories) do
-        localizations["archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id"] = {}
-        localizations["archetype_".. archetype.name .. "_talent_" .. category_id .. "_group_id"][localization] = "      " .. Localize(talent_category_settings[category_id].display_name)
+        localizations["group_".. archetype.name .. "_talent_" .. category_id .. "_id"] = {}
+        localizations["group_".. archetype.name .. "_talent_" .. category_id .. "_id"][localization] = "      " .. Localize(talent_category_settings[category_id].display_name)
         for talent_id, talent in pairs(category) do
             localizations["talent_".. talent_id .. "_weight_id"] = {}
             localizations["talent_".. talent_id .. "_weight_id"][localization] = Localize(talent.display_name)
         end
     end
 
-    localizations["archetype_".. archetype.name .. "_group_id"] = {}
-    localizations["archetype_".. archetype.name .. "_group_id"][localization] = Localize(archetype.archetype_name)
+    localizations["group_".. archetype.name .. "_talent_weight_id"] = {}
+    localizations["group_".. archetype.name .. "_talent_weight_id"][localization] = Localize(archetype.archetype_name)
 end
 
 for node_id, node in pairs(talent_category_settings) do
