@@ -531,14 +531,14 @@ local get_random_weighted_child_node = function(children, widget_lookup)
     local current_sum = 0
 
     -- Second pass: Find the selected node
-    for key, node_id in ipairs(children) do
+    for node_key, node_id in ipairs(children) do
         local widget = widget_lookup[node_id]
         local node_type = widget and widget.type or ""
         local weight = mod:get("sett_talent_" .. node_type .. "_weight_id") or 1
         
         current_sum = current_sum + weight
         if current_sum >= target then
-            return node_id
+            return node_id, node_key
         end
     end
 
@@ -581,21 +581,26 @@ local select_random_walk_talents_on_path = function(
 	local total_point_cap = talent_tree.talent_points
 	local full_path = table.clone(path)
 
+	local valid_children = function(parent_node)
+		local children = talent_tree_adjacency[parent_node]
+		local valid = {}
+		for _, child in ipairs(children) do
+			if not seen_nodes[child] then
+				table.insert(valid, child)
+			end
+		end
+		return valid
+	end
+
 	table.insert(full_path, start_node_id)
 
-	local iterations = 0
-	
-	while iterations < total_point_cap * 2 and points_spent < total_point_cap do
-		iterations = iterations + 1
-		if iterations == total_point_cap * 2 then
-			mod:echo("okay nice")
-		end
-		local random_parent_node = get_random_weighted_child_node(full_path, widget_lookup)
+	while points_spent < total_point_cap do
+		local parent_node, parent_key = get_random_weighted_child_node(full_path, widget_lookup)
 
-		local children = talent_tree_adjacency[random_parent_node]
+		local valid_children = valid_children(parent_node)
 
-		if children then
-			local random_child = get_random_weighted_child_node(children, widget_lookup)
+		if valid_children then
+			local random_child = get_random_weighted_child_node(valid_children, widget_lookup)
 			if random_child then
 				local widget = widget_lookup[random_child]
 				if widget then
