@@ -5,6 +5,9 @@ local ItemSlotSettings = require("scripts/settings/item/item_slot_settings")
 local MasterItems = require("scripts/backend/master_items")
 local CrimesCompabilityMap = require("scripts/settings/character/crimes_compability_mapping")
 local LoadoutRandomizerProfileUtils = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_profile_utils")
+local TalentLayoutParser = require("scripts/ui/views/talent_builder_view/utilities/talent_layout_parser")
+local TalentBuilderViewSettings = require("scripts/ui/views/talent_builder_view/talent_builder_view_settings")
+local talent_category_settings = TalentBuilderViewSettings.settings_by_node_type
 
 local LoadoutRandomizerInventory = {}
 
@@ -209,7 +212,54 @@ local fill_if_empty_slots = {
     ["slot_secondary"] = true,
 }
 
-LoadoutRandomizerInventory.apply_inventory_loadout = function(data, profile_preset, character_id, inventory_items)
+local _filter_layout_talents = function (profile, layout_key, selected_talents, out_talents)
+	out_talents = out_talents or {}
+
+	local archetype = profile.archetype
+
+	if archetype[layout_key] then
+		local layout = require(archetype[layout_key])
+		local nodes = layout.nodes
+
+		for i = 1, #nodes do
+			local node = nodes[i]
+
+			if selected_talents[node.widget_name] then
+				out_talents[node.widget_name] = selected_talents[node.widget_name]
+			end
+		end
+	end
+
+	return out_talents
+end
+
+local _apply_talents_loadout = function(data, profile_preset)
+    local profile = data.profile
+    local talents = {}
+
+    local selected_talent_nodes = {}
+
+    for _, talent in ipairs(data.selected_talent_tree) do
+        selected_talent_nodes[talent] = 1
+    end
+
+    _filter_layout_talents(profile, "talent_layout_file_path", selected_talent_nodes, talents)
+
+    if data.special_selected_talent_tree then
+        local special_talent_nodes = {}
+
+        for _, talent in ipairs(data.special_selected_talent_tree) do
+            special_talent_nodes[talent] = 1
+        end
+        _filter_layout_talents(profile, "specialization_talent_layout_file_path", special_talent_nodes, talents)
+    end
+
+    local active_talent_version = TalentLayoutParser.talents_version(profile)
+
+    LoadoutRandomizerProfileUtils.save_talent_nodes(profile_preset, talents, active_talent_version)
+end
+
+local _apply_inventory_loadout = function(data, profile_preset, inventory_items)
     local profile = data.profile
 
     set_nearest_inventory_item(profile, inventory_items, profile_preset, "slot_primary", data.weapons.melee.item)
@@ -230,6 +280,13 @@ LoadoutRandomizerInventory.apply_inventory_loadout = function(data, profile_pres
     end
 
     apply_random_items_by_slot_to_preset(profile, available_slots, profile_preset, inventory_items)
+end
+
+LoadoutRandomizerInventory.apply_loadout = function(data, profile_preset, character_id, inventory_items)
+    _apply_inventory_loadout(data, profile_preset, inventory_items)
+    _apply_talents_loadout(data, profile_preset)
+
+    gbl_data = data
 end
 
 
