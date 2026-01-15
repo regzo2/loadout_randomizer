@@ -151,7 +151,7 @@ LoadoutRandomizerView._remove_widget = function(self, widget)
 	UIWidget.destroy(ui_renderer, widget)
 end
 
-LoadoutRandomizerView._setup_talent_widgets = function(self, talents, talent_mask)
+LoadoutRandomizerView._setup_talent_widgets = function(self, talents)
 	local node_types = LoadoutRandomizerViewSettings.settings_by_node_type
 
 	if self._node_widgets then
@@ -163,35 +163,25 @@ LoadoutRandomizerView._setup_talent_widgets = function(self, talents, talent_mas
 
 	local widgets = {}
 
-	local ordered_talents = {}
+	local ordered_talents = table.clone(talents)
 
-	for i, talent_category_id in ipairs(talent_mask) do
-		if talent_category_id then
-			local talent_category = talents[talent_category_id]
-			ordered_talents[i] = {}
-			ordered_talents[i].value = talent_category
-			ordered_talents[i].key = talent_category_id
-		end
-	end
+	table.sort(ordered_talents, function(a, b)
+		return a.sort_order < b.sort_order
+	end)
 
-	for i, value in ipairs(ordered_talents) do
-		local talent_category_id = value.key
-		local talent_category = value.value
-		if talent_category then
-			for talent_id, talent in pairs(talent_category) do
-				local node_type = node_types[talent_category_id] or node_types.default
+	for talent_id, talent in ipairs(ordered_talents) do
+		local talent_category_id = talent.type
+		local node_type = node_types[talent_category_id] or node_types.default
 
-				local widget_name = "talent_".. talent_category_id .."_node_" .. talent_id
-				local node_widget_definition = UIWidget.create_definition(node_type.node_definition, widget_name)
-				local node_scenegraph_definition = node_type.node_scenegraph_definition
-				local widget = self:_add_widget(widget_name, node_widget_definition, node_scenegraph_definition)
+		local widget_name = "talent_".. talent_category_id .."_node_" .. talent_id
+		local node_widget_definition = UIWidget.create_definition(node_type.node_definition, widget_name)
+		local node_scenegraph_definition = node_type.node_scenegraph_definition
+		local widget = self:_add_widget(widget_name, node_widget_definition, node_scenegraph_definition)
 
-				widget.content.talent = talent
-				widget.alpha_multiplier = 0
+		widget.content.talent = talent
+		widget.alpha_multiplier = 0
 
-				table.insert(widgets, widget)
-			end
-		end
+		table.insert(widgets, widget)
 	end
 
 	self:_force_update_scenegraph()
@@ -230,7 +220,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 		local player = Managers.player:local_player(local_player_id)
 		local archetype_name = player:archetype_name()
 
-		local data, talent_mask = LoadoutRandomizerGenerator.generate_random_loadout(archetype_name)
+		local data = LoadoutRandomizerGenerator.generate_random_loadout(archetype_name)
 
 		local i = 0.6
 		local iter = 0.6
@@ -242,7 +232,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 			melee_widget.content.item 			= data.weapons.melee.item
 			talent_bg_widget.content.archetype 	= data.archetype
 
-			self:_setup_talent_widgets(data.talents, talent_mask)
+			self:_setup_talent_widgets(data.talents)
 
 			local cb_on_reroll_finish = function()
 				randomize_button.content.hotspot.disabled = false
