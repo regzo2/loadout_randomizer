@@ -171,17 +171,19 @@ LoadoutRandomizerView._setup_talent_widgets = function(self, talents)
 
 	for talent_id, talent in ipairs(ordered_talents) do
 		local talent_category_id = talent.type
-		local node_type = node_types[talent_category_id] or node_types.default
+		if mod:get("sett_talent_".. talent_category_id .."_enabled_id") then
+			local node_type = node_types[talent_category_id] or node_types.default
 
-		local widget_name = "talent_".. talent_category_id .."_node_" .. talent_id
-		local node_widget_definition = UIWidget.create_definition(node_type.node_definition, widget_name)
-		local node_scenegraph_definition = node_type.node_scenegraph_definition
-		local widget = self:_add_widget(widget_name, node_widget_definition, node_scenegraph_definition)
+			local widget_name = "talent_".. talent_category_id .."_node_" .. talent_id
+			local node_widget_definition = UIWidget.create_definition(node_type.node_definition, widget_name)
+			local node_scenegraph_definition = node_type.node_scenegraph_definition
+			local widget = self:_add_widget(widget_name, node_widget_definition, node_scenegraph_definition)
 
-		widget.content.talent = talent
-		widget.alpha_multiplier = 0
+			widget.content.talent = talent
+			widget.alpha_multiplier = 0
 
-		table.insert(widgets, widget)
+			table.insert(widgets, widget)
+		end
 	end
 
 	self:_force_update_scenegraph()
