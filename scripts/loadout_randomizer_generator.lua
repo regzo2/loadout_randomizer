@@ -444,7 +444,7 @@ local select_anchor_talent_path_bfs_segment = function(
         if dist <= points_remaining then
             local children = talent_tree_adjacency[curr]
             if children then
-                local shuffled_children = {table.unpack(children)}
+                local shuffled_children = {unpack(children)}
                 shuffle_table(shuffled_children)
 
                 for _, child in ipairs(shuffled_children) do
