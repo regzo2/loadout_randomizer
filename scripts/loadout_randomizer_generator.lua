@@ -556,7 +556,8 @@ local mark_exclusive_branch_as_seen = function(base_child, seen_nodes, widget_lo
 				seen_nodes[parent] = true
 			end
 
-			local parent_children = widget_lookup[parent].children
+			local parent_children = widget_lookup[parent] and widget_lookup[parent].children
+			if not parent_children then return end
 			for _, child in ipairs(parent_children) do
 				if not seen_nodes[child] then
 					seen_nodes[child] = true
