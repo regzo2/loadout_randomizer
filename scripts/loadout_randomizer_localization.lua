@@ -98,6 +98,9 @@ local localizations = {
     sett_specialization_talent_layout_file_path_cost_randomization_id = {
         en = "Randomize Stimm Lab Spent Points",
     },
+    sett_debug_enabled_id = {
+        en = "Enable Debug Mode"
+    }
 }
 
 local UISettings = require("scripts/settings/ui/ui_settings")

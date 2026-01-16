@@ -285,16 +285,11 @@ return {
                 keybind_type    = "function_call",
                 function_name   = "open_view",
             },
-           --[[
             {
-                setting_id      = "randomizer_tests",
-                type            = "keybind",
-                default_value   = {},
-                keybind_trigger = "pressed",
-                keybind_type    = "function_call",
-                function_name   = "generate_randomization_dataset",
+                setting_id      = "sett_debug_enabled_id",
+                type            = "checkbox",
+                default_value   = false,
             },
-            ]]
             {
                 setting_id    = "weapon_group_id",
                 type          = "group",

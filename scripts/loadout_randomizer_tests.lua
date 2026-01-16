@@ -2,87 +2,46 @@ local mod = get_mod("loadout_randomizer")
 
 local LoadoutRandomizerGenerator = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_generator")
 
-local generate_weapon_randomization_dataset = function()
+local generate_randomization_dataset = function(iterations, class)
 
-    local datas = {}
+    iterations = tonumber(iterations) or 100
+    class = tostring(class)
 
-    gbl_d = datas
+    local stats = {
+        counts = {},
+        runs = 0,
+    }
 
-    for i=0, 1000 do
-        local data = LoadoutRandomizerGenerator.generate_random_loadout(
-            {
-                "ability",
-                "aura",
-                "keystone",
-                "tactical", --blitz
-            },
-            "zealot"
-        )
-
-        for weapon_id, weapon in pairs(data.weapons) do
-            if datas[weapon_id] == nil then
-                datas[weapon_id] = {}
-            end
-            datas[weapon_id][weapon.item.weapon_template] = (datas[weapon_id][weapon.item.weapon_template] or 0) + 1
-        end
-        --[[
-        for category_id, category in data.talents do
-            if datas[category_id] == nil then
-                datas[category_id] = {}
-            end
-            for talent_id, talent in pairs(category) do
-                datas[category_id][]
-            end
-        end
-        ]]
+    local function update_count(category, item)
+        stats.counts[category] = stats.counts[category] or {}
+        stats.counts[category][item] = (stats.counts[category][item] or 0) + 1
     end
 
-end
+    for i=0, iterations do
+        local data = LoadoutRandomizerGenerator.generate_random_loadout(class)
+        gbl_d = data
 
-local generate_lonewolf_randomization_dataset = function()
+        for _, talent in data.talents do
+            update_count("talents", talent_name)
+        end
+    end
 
-    local datas = {}
-    datas.blitz = {}
-    datas.keystones = {}
-    datas.keystone_count = {}
-    datas.aura = {}
-    datas.aura_count = {}
-    datas.talent_conflicts = 0
-
-    gbl_d = datas
-
-    for i=0, 100 do
-        local data = LoadoutRandomizerGenerator.generate_random_loadout(
-            "adamant"
-        )
-
-        local keystones = data.talents.keystone or nil
-        local blitz = data.talents.tactical or nil
-        local aura = data.talents.aura or nil
-
-        if keystones and blitz then
-            if keystones["adamant_disable_companion"] then
-                mod:echo("lonewolf!!")
-                if blitz["adamant_whistle"] then
-                    mod:echo("wtf lonewolf!!")
-                    datas.talent_conflicts = datas.talent_conflicts + 1
-                end
-                if aura["adamant_companion_coherency"] then
-                    mod:echo("wtf lonewolf!!")
-                    datas.talent_conflicts = datas.talent_conflicts + 1
-                end
-            end
-            for id, keystone in pairs(keystones) do
-                datas.keystones[id] = keystone
-                datas.keystone_count[id] = (datas.keystone_count[id] and datas.keystone_count[id] or 0) + 1
-            end
-            for id, keystone in pairs(aura) do
-                datas.aura[id] = keystone
-                datas.aura_count[id] = (datas.aura_count[id] and datas.aura_count[id] or 0) + 1
-            end
+    mod:echo("- Randomization Test Results (" .. class .. ") -")
+    for category, items in pairs(stats.counts) do
+        mod:echo("Category: " .. category)
+        for name, count in pairs(items) do
+            local percent = (count / iterations) * 100
+            mod:echo(string.format("  - %s: %d (%.2f%%)", name, count, percent))
         end
     end
 
 end
 
-mod.generate_randomization_dataset = generate_lonewolf_randomization_dataset
+mod.tests_debug = function()
+    mod:command("rl_run_tests", "Run Tests. rl_run_tests [iter] [class]", generate_randomization_dataset)
+    if mod:get("sett_debug_enabled_id") then
+        mod:command_enable("rl_run_tests")
+    else
+        mod:command_disable("rl_run_tests")
+    end
+end
