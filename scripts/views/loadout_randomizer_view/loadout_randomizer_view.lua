@@ -222,7 +222,7 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 		local player = Managers.player:local_player(local_player_id)
 		local archetype_name = player:archetype_name()
 
-		local data = LoadoutRandomizerGenerator.generate_random_loadout(archetype_name)
+		local data = LoadoutRandomizerGenerator.generate_random_loadout()
 
 		local i = 0.6
 		local iter = 0.6
@@ -230,8 +230,17 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 		local cb_on_reset = function()
 
 			archetype_widget.content.archetype 	= data.archetype
-			ranged_widget.content.item 			= data.weapons.ranged.item
-			melee_widget.content.item 			= data.weapons.melee.item
+
+			if ranged_widget.content.icon_load_id then
+				Managers.ui:unload_item_icon(ranged_widget.content.icon_load_id)
+			end
+			ranged_widget.content.item = data.weapons.ranged.item
+
+			if melee_widget.content.icon_load_id then
+				Managers.ui:unload_item_icon(melee_widget.content.icon_load_id)
+			end
+			melee_widget.content.item = data.weapons.melee.item
+			
 			talent_bg_widget.content.archetype 	= data.archetype
 
 			self:_setup_talent_widgets(data.talents)
@@ -346,6 +355,17 @@ LoadoutRandomizerView._draw_widgets = function(self, dt, t, input_service, ui_re
 end
 
 LoadoutRandomizerView.on_exit = function(self)
+	local ranged_widget = self._widgets_by_name.randomize_weapon_ranged_icon
+	local melee_widget = self._widgets_by_name.randomize_weapon_melee_icon
+
+	if ranged_widget.content.icon_load_id then
+		Managers.ui:unload_item_icon(ranged_widget.content.icon_load_id)
+	end
+
+	if melee_widget.content.icon_load_id then
+		Managers.ui:unload_item_icon(melee_widget.content.icon_load_id)
+	end
+
 	LoadoutRandomizerView.super.on_exit(self)
 
 	if self._world_spawner then
