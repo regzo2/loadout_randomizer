@@ -66,7 +66,7 @@ local _add_randomizer_profile_preset = function(character_id)
 
     local save_data = _character_save_data(character_id)
     local profiles = save_data and save_data.profile_presets
-    local active_profile_preset_id = save_data.active_profile_preset_id
+    local active_profile_preset_id = save_data and save_data.active_profile_preset_id
 
     local profile_preset
 
