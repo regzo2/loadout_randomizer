@@ -181,11 +181,12 @@ end
 local apply_random_items_by_slot_to_preset = function(profile, slots, profile_preset, provided_inventory_items)
 
     for _, slot in pairs(slots) do
-        local archetype_name = profile.archetype.mod_name
+        local archetype_name = profile.archetype.name
         local slot_settings = ItemSlotSettings[slot.slot_name]
         local archetype_restrictions = slot_settings.archetype_restrictions
+        local allowed = not archetype_restrictions or table.find(archetype_restrictions, archetype_name)
 
-        if archetype_restrictions and archetype_restrictions[archetype_name] then
+        if archetype_allowed then
             set_random_inventory_item(profile, provided_inventory_items, profile_preset, slot)
         else
             set_random_inventory_item(profile, provided_inventory_items, profile_preset, slot)
@@ -235,6 +236,7 @@ end
 
 local _apply_talents_loadout = function(data, profile_preset)
     local profile = data.profile
+    local character_id = profile.character_id
     local talents = {}
 
     local selected_talent_nodes = {}
@@ -256,11 +258,13 @@ local _apply_talents_loadout = function(data, profile_preset)
 
     local active_talent_version = TalentLayoutParser.talents_version(profile)
 
-    LoadoutRandomizerProfileUtils.save_talent_nodes(profile_preset, talents, active_talent_version)
+    LoadoutRandomizerProfileUtils.save_talent_nodes(profile_preset, character_id, talents, active_talent_version)
 end
 
 local _apply_inventory_loadout = function(data, profile_preset, inventory_items)
     local profile = data.profile
+    local archetype = profile.archetype
+    local archetype_name = archetype.name
 
     set_nearest_inventory_item(profile, inventory_items, profile_preset, "slot_primary", data.weapons.melee.item)
     set_nearest_inventory_item(profile, inventory_items, profile_preset, "slot_secondary", data.weapons.ranged.item)
@@ -268,13 +272,15 @@ local _apply_inventory_loadout = function(data, profile_preset, inventory_items)
     local available_slots = {}
 
     for slot_name, slot in pairs(ItemSlotSettings) do
-        --mod:echo(slot_name)
-        if slot.equipped_in_inventory and (mod:get("sett_" .. slot_name .. "_enabled_id") == true or fill_if_empty_slots[slot_name]) then
+        local equipped_in_inventory = slot.equipped_in_inventory
+        local randomize_slot = (mod:get("sett_" .. slot_name .. "_enabled_id") == true or fill_if_empty_slots[slot_name])
+        local archetype_restrictions = slot.archetype_restrictions
+        local is_allowed_archetype = not archetype_restrictions or table.find(archetype_restrictions, tostring(archetype_name))
+        if equipped_in_inventory and randomize_slot and is_allowed_archetype then
             local slot_setting = {
                 slot_name = slot_name,
                 equip_if_empty = fill_if_empty_slots[slot_name],
             }
-            --mod:echo(slot_name .. " created")
             table.insert(available_slots, slot_setting)
         end
     end

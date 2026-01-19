@@ -19,13 +19,10 @@ local generate_randomization_dataset = function(iterations, class)
 
     for i=0, iterations do
         local data = LoadoutRandomizerGenerator.generate_random_loadout(class)
-        gbl_d = data
 
-        for _, talent in data.talents do
-            update_count("talents", talent_name)
-        end
     end
 
+    --[[
     mod:echo("- Randomization Test Results (" .. class .. ") -")
     for category, items in pairs(stats.counts) do
         mod:echo("Category: " .. category)
@@ -34,6 +31,7 @@ local generate_randomization_dataset = function(iterations, class)
             mod:echo(string.format("  - %s: %d (%.2f%%)", name, count, percent))
         end
     end
+    ]]
 
 end
 

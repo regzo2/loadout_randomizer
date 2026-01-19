@@ -85,4 +85,4 @@ end
 mod:command("randomize_loadout", mod:localize("generate_loadout_cmd_description_id"), mod.open_view)
 mod:command("rl", mod:localize("generate_loadout_cmd_description_id"), mod.open_view)
 
-mod:command("rl_clean", mod:localize("generate_loadout_cmd_description_id"), LoadoutRandomizerProfileUtils.delete_randomizer_profile)
+mod:command("rl_clean", mod:localize("generate_loadout_cmd_description_id"), LoadoutRandomizerProfileUtils.delete_randomizer_profiles)

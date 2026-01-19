@@ -201,7 +201,7 @@ mod:hook_safe(CLASS.InventoryBackgroundView, "_save_current_talents_to_profile_p
 			TalentLayoutParser.filter_layout_talents(profile, "specialization_talent_layout_file_path", self._current_profile_equipped_specialization_talents, all_talents)
 		end
 
-		LoadoutRandomizerProfileUtils.save_talent_nodes(nil, all_talents, active_talents_version)
+		LoadoutRandomizerProfileUtils.save_talent_nodes(nil, nil, all_talents, active_talents_version)
 	end
 end)
 
