@@ -20,6 +20,9 @@ local localizations = {
     generate_loadout_cmd_description_id = {
         en = "Suggests a randomized loadout.",       
     },
+    sett_randomize_class_id = {
+        en = "Randomize Operative",
+    },
     sett_weapon_display_format_id = {
         en = "Weapon Display Format",
     },
@@ -83,8 +86,8 @@ local localizations = {
     loc_talent_ability_unrolled = {
         en = "Ability Unrolled!",
     },
-    cosmetic_group_id = {
-        en = "Cosmetic Settings",
+    equipment_group_id = {
+        en = "Randomizer Settings",
     },
     talent_tree_group_id = {
         en = "Talent Tree Settings",

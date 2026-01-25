@@ -783,10 +783,18 @@ local get_talent_data = function(data, talent_tree_key)
 end
 
 
-LoadoutRandomizerGenerator.generate_random_loadout = function(archetype_name)   
+LoadoutRandomizerGenerator.generate_random_loadout = function()   
     local data = { class = {}, talents = {}, weapons = {} }
 
-	data.archetype = archetype_name and Archetypes[archetype_name] or Archetypes[random_element(Archetypes)]
+	if mod:get("sett_randomize_class_id") then
+		data.archetype = Archetypes[random_element(Archetypes)]
+	else
+		local local_player_id = 1
+		local player = Managers.player:local_player(local_player_id)
+		local archetype_name = player:archetype_name()
+		data.archetype = archetype_name and Archetypes[archetype_name] or Archetypes[random_element(Archetypes)]
+	end
+
 	local arch_id = data.archetype.name
 	data.profile = get_best_matching_profile(arch_id)
 	local all_arch_items = get_item_data(data.archetype)

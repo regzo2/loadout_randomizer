@@ -247,7 +247,7 @@ local weapon_weight_subwidgets = function()
 	return widget
 end
 
-local randomize_cosmetics_subwidgets = function()
+local randomize_equipment_subwidgets = function()
     local ItemSlotSettings = require("scripts/settings/item/item_slot_settings")
 
     local widget = {}
@@ -291,29 +291,14 @@ return {
                 default_value   = false,
             },
             {
-                setting_id    = "weapon_group_id",
+                setting_id      = "sett_randomize_class_id",
+                type            = "checkbox",
+                default_value   = true,
+            },
+            {
+                setting_id    = "equipment_group_id",
                 type          = "group",
-                sub_widgets   = {
-                    {
-                        setting_id      = "sett_weapon_display_format_id",
-                        type            = "dropdown",
-                        default_value   = "condensed",
-                        options = {
-                            { text = "weapon_mark_family_id", value = "condensed" },
-                            { text = "weapon_pattern_mark_family_id", value = "full" },
-                        },
-                    },
-                    {
-                        setting_id      = "sett_randomize_weapons_id",
-                        type            = "checkbox",
-                        default_value   = true,
-                    },
-                    {
-                        setting_id      = "sett_weapon_chance_id",
-                        type            = "checkbox",
-                        default_value   = true,
-                    },
-                },
+                sub_widgets   = randomize_equipment_subwidgets(),
             },
             {
                 setting_id    = "talent_tree_group_id",
@@ -335,11 +320,6 @@ return {
                 setting_id    = "talent_group_id",
                 type          = "group",
                 sub_widgets   = talent_settings_subwidgets(),
-            },
-            {
-                setting_id    = "cosmetic_group_id",
-                type          = "group",
-                sub_widgets   = randomize_cosmetics_subwidgets(),
             },
             {
                 setting_id    = "weapon_weight_group_id",
