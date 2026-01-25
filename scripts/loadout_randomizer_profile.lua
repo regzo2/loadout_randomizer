@@ -146,6 +146,10 @@ LoadoutRandomizerProfile.apply_randomizer_loadout_to_profile_preset = function(d
     local character_id = profile.character_id
     local profile_preset = LoadoutRandomizerProfileUtils.get_randomizer_profile(character_id)
 
+	if not profile_preset then
+		profile_preset = LoadoutRandomizerProfileUtils.get_default_profile()
+	end
+
     Managers.data_service.gear:fetch_inventory(character_id):next(function (inventory_items)
         LoadoutRandomizerInventory.apply_loadout(data, profile_preset, character_id, inventory_items)
         LoadoutRandomizerProfileUtils.save_randomizer_profile(profile_preset, character_id)

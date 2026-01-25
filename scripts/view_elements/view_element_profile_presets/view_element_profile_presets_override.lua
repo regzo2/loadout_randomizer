@@ -18,6 +18,9 @@ local on_randomize_profile_preset_pressed = function (self, is_active)
 
     if is_active and content.profile_preset_id ~= self._active_profile_preset_id then
         local profile_preset = LoadoutRandomizerProfileUtils.get_randomizer_profile()
+
+		if not profile_preset then return end
+
 		self._active_profile_preset_id = profile_preset_id
 
 		ProfileUtils.save_active_profile_preset_id(profile_preset.id)
@@ -88,9 +91,8 @@ mod:hook_safe(CLASS.ViewElementProfilePresets, "_setup_preset_buttons", function
 
 	if randomizer_profile then
 		create_randomizer_widget(self, randomizer_profile)
+		self:_sync_profile_buttons_items_status()
 	end
-
-	self:_sync_profile_buttons_items_status()
 end)
 
 mod:hook_safe(CLASS.ViewElementProfilePresets, "show_profile_preset_missing_items_warning", function(self, is_missing_content, is_modified_content, optional_preset_id)
@@ -98,7 +100,7 @@ mod:hook_safe(CLASS.ViewElementProfilePresets, "show_profile_preset_missing_item
 	local active_profile_preset_id = optional_preset_id or self._active_profile_preset_id
 
 	local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
-	if randomizer_profile.is_active then
+	if randomizer_profile and randomizer_profile.is_active then
 		local profile_buttons_widgets = self._profile_buttons_widgets
 
 		local widget = randomizer_profile_widget

@@ -11,7 +11,7 @@ mod:hook_require(ProfileUtilsPath, function(ProfileUtils)
     mod:hook_safe(ProfileUtils, "save_item_id_for_profile_preset", function(profile_preset_id, slot_id, item_gear_id)
         local profile_preset = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-        if profile_preset.id == profile_preset_id then
+        if profile_preset and profile_preset.id == profile_preset_id then
             local loadout = profile_preset.loadout
             loadout[slot_id] = item_gear_id
 

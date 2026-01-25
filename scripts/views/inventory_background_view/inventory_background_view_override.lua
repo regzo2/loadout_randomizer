@@ -135,7 +135,7 @@ mod:hook_safe(CLASS.InventoryBackgroundView, "_update_missing_warning_marker", f
         local active_talent_version = TalentLayoutParser.talents_version(profile)
         local preset = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-        if preset.id == ProfileUtils.get_active_profile_preset_id() then
+        if preset and preset.id == ProfileUtils.get_active_profile_preset_id() then
             local loadout = preset and preset.loadout
             local active_preset = preset.id == ProfileUtils.get_active_profile_preset_id()
             --mod:echo("rando: " .. preset.id .. " == " .. self._profile_presets_element._active_profile_preset_id)
@@ -187,7 +187,7 @@ mod:hook_safe(CLASS.InventoryBackgroundView, "_save_current_talents_to_profile_p
 
 	local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-	if randomizer_profile.id == ProfileUtils.get_active_profile_preset_id() then
+	if randomizer_profile and randomizer_profile.id == ProfileUtils.get_active_profile_preset_id() then
 		local player = self._preview_player
 		local profile = player:profile()
 		local all_talents = {}
@@ -208,7 +208,7 @@ end)
 mod:hook_safe(CLASS.InventoryBackgroundView, "event_switch_mark", function (self, gear_id, mark_id, item)
     local randomizer_profile = LoadoutRandomizerProfileUtils.get_randomizer_profile()
 
-    if randomizer_profile.id == self._profile_presets_element._active_profile_preset_id then
+    if randomizer_profile and randomizer_profile.id == self._profile_presets_element._active_profile_preset_id then
         --self:_update_missing_warning_marker()
     end
 end)
