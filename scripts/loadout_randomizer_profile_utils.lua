@@ -62,32 +62,33 @@ end
 
 local _add_randomizer_profile_preset = function(character_id)
 
-	local new_profile_preset_id = math.uuid()
+	local new_profile_preset_id = ProfileUtils.get_available_profile_preset_id()
 
     local save_data = _character_save_data(character_id)
     local profiles = save_data and save_data.profile_presets
     local active_profile_preset_id = save_data and save_data.active_profile_preset_id
+    local found_preset_or_nil = ProfileUtils.get_profile_preset(active_profile_preset_id)
 
     local profile_preset
 
-    if not profiles or not active_profile_preset_id then
-        profile_preset = profiles[math.random(#profiles)]
+    if found_preset_or_nil then
+        profile_preset = found_preset_or_nil
     else
-        local found_preset = ProfileUtils.get_profile_preset(active_profile_preset_id)
-        if not found_preset then
-            profile_preset = profiles[math.random(#profiles)]
-        else
-            profile_preset = found_preset
-        end
+        profile_preset = profiles[math.random(#profiles)]
     end
 
-    local randomizer_profile = table.clone(profile_preset)
+    if profile_preset then
 
-	randomizer_profile.id = new_profile_preset_id
+        local randomizer_profile = table.clone(profile_preset)
 
-    LoadoutRandomizerProfileUtils.save_randomizer_profile(randomizer_profile, character_id)
+        randomizer_profile.id = new_profile_preset_id
 
-	return randomizer_profile
+        LoadoutRandomizerProfileUtils.save_randomizer_profile(randomizer_profile, character_id)
+
+        return randomizer_profile
+    end
+
+    return nil
 end
 
 LoadoutRandomizerProfileUtils.delete_randomizer_profile = function(character_id)
@@ -132,6 +133,14 @@ LoadoutRandomizerProfileUtils.save_talent_nodes = function(randomizer_profile, c
 	LoadoutRandomizerProfileUtils.save_randomizer_profile(profile_preset, character_id)
 end
 
+LoadoutRandomizerProfileUtils.get_default_profile = function()
+    return {
+		loadout = {},
+		talents = {},
+		id = ProfileUtils.get_available_profile_preset_id(),
+	}
+end
+
 LoadoutRandomizerProfileUtils.get_randomizer_profile = function(character_id)
 
     local profile_preset = _get_randomizer_profile_save_data(character_id)
@@ -140,8 +149,10 @@ LoadoutRandomizerProfileUtils.get_randomizer_profile = function(character_id)
         Managers.event:trigger("event_player_save_changes_to_current_preset")
 
         profile_preset = _add_randomizer_profile_preset(character_id)
-        profile_preset.is_randomizer_profile = true
-        LoadoutRandomizerProfileUtils.save_randomizer_profile(profile_preset, character_id)
+        if profile_preset then
+            profile_preset.is_randomizer_profile = true
+            LoadoutRandomizerProfileUtils.save_randomizer_profile(profile_preset, character_id)
+        end
     end
 
     return profile_preset
