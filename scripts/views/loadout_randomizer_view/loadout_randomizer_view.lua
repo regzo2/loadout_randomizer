@@ -208,10 +208,6 @@ LoadoutRandomizerView._setup_loadout_widgets = function(self)
 	local cb_on_item_roll = function()
 		randomize_button.content.hotspot.disabled = true
 
-		local local_player_id = 1
-		local player = Managers.player:local_player(local_player_id)
-		local archetype_name = player:archetype_name()
-
 		local data = LoadoutRandomizerGenerator.generate_random_loadout()
 
 		local i = 0.6
