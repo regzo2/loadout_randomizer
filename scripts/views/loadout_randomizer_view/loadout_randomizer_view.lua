@@ -27,16 +27,6 @@ LoadoutRandomizerView.init = function(self, settings)
 	LoadoutRandomizerView.super.init(self, LoadoutRandomizerViewDefinitions, settings, nil, nil)
 end
 
-LoadoutRandomizerView._start_anim = function (self, animation_sequence_name, widgets, params, callback, speed, delay)
-	speed = speed or 1
-
-	local scenegraph_definition = self._definitions.scenegraph_definition
-	local ui_sequence_animator = self._ui_sequence_animator
-	local animation_id = ui_sequence_animator:start_animation(self, animation_sequence_name, widgets, params, speed, callback, delay)
-
-	return animation_id
-end
-
 LoadoutRandomizerView._setup_background_world = function (self, level_name)
 	if self._world_spawner then
 		self._world_spawner:destroy()
