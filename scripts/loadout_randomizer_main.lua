@@ -1,10 +1,5 @@
 local mod = get_mod("loadout_randomizer")
 
-local Archetypes = require("scripts/settings/archetype/archetypes")
-local UISettings = require("scripts/settings/ui/ui_settings")
-local ITEM_TYPES = UISettings.ITEM_TYPES
-local MasterItems = require("scripts/backend/master_items")
-local LoadoutRandomizerGenerator    = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_generator")
 local LoadoutRandomizerProfileUtils = mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_profile_utils")
 
 mod:io_dofile("loadout_randomizer/scripts/loadout_randomizer_tests")
@@ -16,9 +11,6 @@ mod.randomizer_profiles = mod:get("data_randomizer_profiles") or {}
 
 mod.on_setting_changed = function()
   mod.tests_debug()
-	mod.sett_weapon_display_format 	= mod:get("sett_weapon_display_format_id")
-	mod.sett_display_weapon_chance 	= mod:get("sett_weapon_chance_id")
-	mod.sett_randomize_weapons 		  = mod:get("sett_randomize_weapons_id")
 end
 
 mod.on_setting_changed()
@@ -78,8 +70,6 @@ function mod.open_view()
     ui_manager:close_view(view_name)
   end
 end
-
-
 
 --mod.on_key_generate_randomizer_data = display_random_loadout
 mod:command("randomize_loadout", mod:localize("generate_loadout_cmd_description_id"), mod.open_view)
