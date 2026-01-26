@@ -73,7 +73,7 @@ local _add_randomizer_profile_preset = function(character_id)
 
     if found_preset_or_nil then
         profile_preset = found_preset_or_nil
-    else
+    elseif profiles then
         profile_preset = profiles[math.random(#profiles)]
     end
 
