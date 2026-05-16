@@ -1,3 +1,5 @@
+local mod = get_mod("loadout_randomizer")
+
 local localizations = {
     mod_name = {
         en = "Loadout Randomizer",
@@ -181,8 +183,14 @@ for _, archetype in pairs(Archetypes) do
 end
 
 for node_id, node in pairs(talent_category_settings) do
-    localizations["talent_" .. node_id .. "_group_id"] = {}
-    localizations["talent_" .. node_id .. "_group_id"][localization] = "        " .. Localize(node.display_name)
+    if node.display_name then
+        localizations["talent_" .. node_id .. "_group_id"] = {}
+        localizations["talent_" .. node_id .. "_group_id"][localization] = "        " .. Localize(node.display_name)
+    else
+        mod:echo("node_id: " .. node_id)
+        localizations["talent_" .. node_id .. "_group_id"] = {}
+        localizations["talent_" .. node_id .. "_group_id"][localization] = "        " .. Localize(node_id)
+    end
 end
 
 for slot_name, slot in pairs(ItemSlotSettings) do
